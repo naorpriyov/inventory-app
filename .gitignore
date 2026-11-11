@@ -1,0 +1,5 @@
+# הנתונים והמפתח הסודי לא עולים ל־Git
+data/*
+!data/.keep
+__pycache__/
+*.pyc

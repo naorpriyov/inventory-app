@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: inventory-app
+    runtime: python
+    region: frankfurt
+    plan: starter            # דיסק קבוע דורש תוכנית בתשלום (לא Free)
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    healthCheckPath: /login
+    envVars:
+      - key: INV_DATA_DIR
+        value: /var/data
+      - key: INV_HTTPS
+        value: "1"
+    disk:
+      name: inventory-data
+      mountPath: /var/data
+      sizeGB: 1
