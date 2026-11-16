@@ -8,6 +8,7 @@ import re
 import secrets
 import sqlite3
 import time
+import unicodedata
 from functools import wraps
 
 from flask import Flask, g, jsonify, redirect, request, send_from_directory, session
@@ -91,6 +92,18 @@ def new_invite():
 
 
 # ---------------------------------------------------------------- users
+def pw_ver(u):
+    """טביעה קצרה של הסיסמה. כשהסיסמה מוחלפת, כל החיבורים הקודמים של המשתמש מתנתקים."""
+    return u["pw"][-12:]
+
+
+def start_session(u):
+    session.clear()
+    session.permanent = True
+    session["uid"] = u["id"]
+    session["pv"] = pw_ver(u)
+
+
 def current_user():
     uid = session.get("uid")
     if not uid:
@@ -98,7 +111,55 @@ def current_user():
     u = db().execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
     if not u or u["role"] == "blocked":
         return None
+    pv = session.get("pv")
+    if pv is None:
+        session["pv"] = pw_ver(u)  # חיבור מגרסה קודמת
+    elif pv != pw_ver(u):
+        return None
     return u
+
+
+# ---------------------------------------------------------------- brute-force protection
+FAILS = {}  # key -> [count, first_ts]
+FAIL_WINDOW = 15 * 60
+
+
+def client_ip():
+    ip = request.remote_addr or ""
+    # מאחורי Tailscale Funnel הבקשה מגיעה מהמחשב עצמו, והכתובת האמיתית בכותרת
+    if ip in ("127.0.0.1", "::1"):
+        ip = (request.headers.get("X-Forwarded-For") or ip).split(",")[0].strip()
+    return ip
+
+
+def too_many(*keys_limits):
+    now = time.time()
+    for key, limit in keys_limits:
+        c = FAILS.get(key)
+        if c and now - c[1] < FAIL_WINDOW and c[0] >= limit:
+            return True
+    return False
+
+
+def add_fail(*keys):
+    now = time.time()
+    for key in keys:
+        c = FAILS.get(key)
+        if not c or now - c[1] >= FAIL_WINDOW:
+            FAILS[key] = [1, now]
+        else:
+            c[0] += 1
+    if len(FAILS) > 5000:
+        for k in [k for k, c in FAILS.items() if now - c[1] >= FAIL_WINDOW]:
+            FAILS.pop(k, None)
+
+
+LOCKED_MSG = "יותר מדי ניסיונות שגויים. נסו שוב בעוד 15 דקות."
+
+
+def body():
+    b = request.get_json(silent=True)
+    return b if isinstance(b, dict) else {}
 
 
 def is_owner(u):
@@ -130,17 +191,26 @@ def users_count():
     return db().execute("SELECT COUNT(*) c FROM users").fetchone()["c"]
 
 
-USERNAME_RE = re.compile(r"^[A-Za-z0-9_.\-]{3,32}$")
+MIN_PW = 7  # אורך מינימלי לסיסמה
+PW_MSG = f"הסיסמה צריכה להכיל לפחות {MIN_PW} תווים."
+
+# שם משתמש: אותיות בעברית או באנגלית, ספרות, נקודה, מקף או קו תחתון
+USERNAME_RE = re.compile(r"^[A-Za-z0-9_.\-א-ת]{3,32}$")
+
+
+def norm_username(s):
+    """מאחד צורות כתיבה שונות של אותו שם, כדי שהכניסה תעבוד מכל מקלדת."""
+    return unicodedata.normalize("NFC", str(s or "")).strip()
 
 
 def validate_new_user(username, name, password):
-    if not USERNAME_RE.match(username or ""):
-        return "שם משתמש: 3 עד 32 תווים באנגלית, ספרות, נקודה, מקף או קו תחתון."
+    if not USERNAME_RE.match(norm_username(username)):
+        return "שם משתמש: 3 עד 32 תווים, אותיות בעברית או באנגלית, ספרות, נקודה, מקף או קו תחתון. בלי רווחים."
     if not (name or "").strip():
         return "יש למלא שם מלא."
-    if len(password or "") < 8:
-        return "הסיסמה צריכה להכיל לפחות 8 תווים."
-    if db().execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone():
+    if len(password or "") < MIN_PW:
+        return PW_MSG
+    if db().execute("SELECT 1 FROM users WHERE username=?", (norm_username(username),)).fetchone():
         return "שם המשתמש כבר תפוס."
     return None
 
@@ -149,7 +219,7 @@ def create_user(username, name, password, role):
     uid = secrets.token_hex(8)
     db().execute(
         "INSERT INTO users(id,username,name,pw,role,created) VALUES(?,?,?,?,?,?)",
-        (uid, username, name.strip(), generate_password_hash(password), role, time.time()),
+        (uid, norm_username(username), name.strip(), generate_password_hash(password), role, time.time()),
     )
     db().commit()
     return uid
@@ -167,20 +237,77 @@ def get_doc(path):
     return json.loads(r["data"])
 
 
-def flags_of(u):
+def approved_perm(u):
     p = get_doc("perms/" + perm_key(u["id"]))
     if not p or p.get("status") != "approved" or p.get("uid") != u["id"]:
+        return None
+    return p
+
+
+def flags_of(u):
+    p = approved_perm(u)
+    if not p:
         return {}
     return p.get("flags") or {"lower": True}
 
 
+# מסכי התוכנה. לכל עובד נקבעת לכל מסך רמת גישה: none (ללא), view (צפייה), full (מלאה)
+TABS = ("dashboard", "inventory", "drugkits", "sign", "ledger", "count", "locations")
+
+
+def tabs_of(u):
+    if is_owner(u):
+        return {t: "full" for t in TABS}
+    p = approved_perm(u)
+    t = (p or {}).get("tabs") or {}
+    return {k: (t.get(k) if t.get(k) in ("view", "full") else "none") for k in TABS}
+
+
+def has_any_access(u):
+    return any(v != "none" for v in tabs_of(u).values())
+
+
+def has_full(u, *tabs):
+    t = tabs_of(u)
+    return any(t[x] == "full" for x in (tabs or TABS))
+
+
+def access_sig(u):
+    """משתנה כשהרשאות המשתמש משתנות, כדי שהדפדפן יטען מחדש את הנתונים."""
+    return json.dumps([u["role"], tabs_of(u)], sort_keys=True)
+
+
 APPEND_ONLY = {"ledger", "counts", "cancels"}
+
+# אוספים שהתוכנה משתמשת בהם. עובד לא יכול ליצור אוספים אחרים
+COLLECTIONS = {"items", "kits", "locations", "catalog", "batches", "perms", "ledger", "counts",
+               "cancels", "caregivers", "meta", "recon", "moves", "notes",
+               "boxes", "boxtpl"}  # boxes = קופסאות ערכות סמים ממוספרות, boxtpl = תבנית התכולה לכל סדרה
+
+# נתונים רגישים נשלחים רק למי שיש לו גישה (צפייה או מלאה) לאחד מהמסכים שצריכים אותם
+READ_TABS = {
+    "ledger": ("ledger",),            # ספר הסמים
+    "cancels": ("ledger",),           # זיכויי פתקים
+    "caregivers": ("sign",),          # שמות ומספרי זהות של מטפלים
+    "counts": ("count", "dashboard"),  # ספירות מלאי
+    "recon": ("dashboard",),
+}
 
 
 def can_read(u, path):
+    if is_owner(u):
+        return True
     seg = path.split("/")
-    if seg[0] == "notes" and len(seg) >= 2 and seg[1] != u["id"] and not is_owner(u):
+    if seg[0] == "perms":
+        return len(seg) >= 2 and seg[1] == perm_key(u["id"])  # רק בקשת ההרשאות של עצמו
+    if not has_any_access(u):
+        return False  # עובד בלי גישה לאף מסך לא מקבל נתונים
+    if seg[0] == "notes" and len(seg) >= 2 and seg[1] != u["id"]:
         return False
+    need = READ_TABS.get(seg[0])
+    if need:
+        t = tabs_of(u)
+        return any(t[x] != "none" for x in need)
     return True
 
 
@@ -190,8 +317,8 @@ def can_write(u, path, data, op):
         return True
     seg = path.split("/")
     top = seg[0]
-    if top == "notes":
-        return op != "delete" and len(seg) >= 2 and seg[1] == u["id"]
+    if top not in COLLECTIONS:
+        return False
     if top == "perms":
         return (
             op != "delete"
@@ -200,12 +327,26 @@ def can_write(u, path, data, op):
             and data.get("uid") == u["id"]
             and data.get("status") == "pending"
             and not data.get("flags")
+            and not data.get("tabs")
         )
+    # הרשאות לפי מסך: כתיבה רק למי שיש לו גישה מלאה למסך הרלוונטי
+    if top == "notes":
+        return op != "delete" and len(seg) >= 2 and seg[1] == u["id"] and has_full(u, "sign")
+    if top == "counts" and not has_full(u, "count"):
+        return False
+    if top == "locations" and not has_full(u, "locations"):
+        return False
+    if top == "recon" and not has_full(u, "dashboard"):
+        return False
+    if top in ("boxes", "boxtpl") and not has_full(u, "drugkits"):
+        return False
+    if not has_full(u):
+        return False  # צפייה בלבד בכל המסכים
     if top == "cancels":
         return False  # זיכוי פתק – מנהל בלבד
     if top in APPEND_ONLY:
         return op != "delete" and get_doc(path) is None  # רישום חדש בלבד, בלי שינוי או מחיקה
-    if top in ("items", "kits", "locations") and op == "delete":
+    if top in ("items", "kits", "locations", "boxes") and op == "delete":
         return bool(flags_of(u).get("edit"))
     return True
 
@@ -227,6 +368,32 @@ def write_doc(path, data, deleted=False):
         (path, parent, None if deleted else json.dumps(data, ensure_ascii=False), 1 if deleted else 0, time.time(), g.user["id"]),
     )
     db().commit()
+
+
+# ---------------------------------------------------------------- request guards
+@app.before_request
+def _csrf_guard():
+    # בקשות ששומרות נתונים חייבות להיות JSON. טופס מאתר זר לא יכול לשלוח JSON בלי אישור הדפדפן
+    if request.path.startswith("/api/") and request.method in ("POST", "PUT") and not request.is_json:
+        return jsonify(error="בקשה לא תקינה", code="invalid_argument"), 415
+    origin = request.headers.get("Origin")
+    if origin and request.method not in ("GET", "HEAD", "OPTIONS") and origin.split("://", 1)[-1] != request.host:
+        return jsonify(error="בקשה מאתר אחר נחסמה", code="invalid_argument"), 403
+
+
+@app.after_request
+def _security_headers(resp):
+    h = resp.headers
+    h.setdefault("X-Content-Type-Options", "nosniff")
+    h.setdefault("X-Frame-Options", "DENY")
+    h.setdefault("Referrer-Policy", "same-origin")
+    h.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    h.setdefault("Content-Security-Policy", "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'")
+    if app.config["SESSION_COOKIE_SECURE"]:
+        h.setdefault("Strict-Transport-Security", "max-age=31536000")
+    if request.path.startswith("/api/"):
+        h["Cache-Control"] = "no-store"
+    return resp
 
 
 # ---------------------------------------------------------------- pages
@@ -283,46 +450,56 @@ def static_files(p):
 def api_setup():
     if users_count() > 0:
         return jsonify(error="המערכת כבר הוגדרה."), 400
-    b = request.get_json(force=True)
+    b = body()
     err = validate_new_user(b.get("username"), b.get("name"), b.get("password"))
     if err:
         return jsonify(error=err), 400
     uid = create_user(b["username"], b["name"], b["password"], "owner")
     new_invite()
-    session.clear()
-    session.permanent = True
-    session["uid"] = uid
+    start_session(db().execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone())
     return jsonify(ok=True)
 
 
 @app.post("/api/login")
 def api_login():
-    b = request.get_json(force=True)
-    u = db().execute("SELECT * FROM users WHERE username=?", (b.get("username", ""),)).fetchone()
-    if not u or not check_password_hash(u["pw"], b.get("password", "")):
+    b = body()
+    name = norm_username(b.get("username"))
+    ip_key, user_key = "ip:" + client_ip(), "user:" + name.lower()
+    if too_many((ip_key, 20), (user_key, 8)):
+        return jsonify(error=LOCKED_MSG), 429
+    u = db().execute("SELECT * FROM users WHERE username=?", (name,)).fetchone()
+    if not u or not check_password_hash(u["pw"], str(b.get("password") or "")):
+        add_fail(ip_key, user_key)
         time.sleep(0.6)
         return jsonify(error="שם משתמש או סיסמה שגויים."), 401
     if u["role"] == "blocked":
         return jsonify(error="החשבון חסום. פנו למנהל המערכת."), 403
-    session.clear()
-    session.permanent = True
-    session["uid"] = u["id"]
+    FAILS.pop(user_key, None)
+    start_session(u)
     return jsonify(ok=True)
 
 
 @app.post("/api/register")
 def api_register():
-    b = request.get_json(force=True)
-    code = (b.get("invite") or "").strip().upper()
-    if not code or code != (setting("invite") or ""):
+    b = body()
+    ip_key = "reg:" + client_ip()
+    if too_many((ip_key, 10)):
+        return jsonify(error=LOCKED_MSG), 429
+    code = str(b.get("invite") or "").strip().upper()
+    if not code or not secrets.compare_digest(code, setting("invite") or ""):
+        add_fail(ip_key)
         return jsonify(error="קוד ההרשמה שגוי. בקשו את הקוד ממנהל המערכת."), 400
+    # ההרשמה בלי שם מלא: שם המשתמש משמש גם כשם שמוצג בתוכנה
+    b["name"] = str(b.get("name") or "").strip() or norm_username(b.get("username"))
     err = validate_new_user(b.get("username"), b.get("name"), b.get("password"))
     if err:
         return jsonify(error=err), 400
     uid = create_user(b["username"], b["name"], b["password"], "user")
-    session.clear()
-    session.permanent = True
-    session["uid"] = uid
+    # בקשת הרשאות נשלחת למנהל אוטומטית, כדי שהעובד יופיע אצלו ב"בקשות ממתינות"
+    g.user = db().execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+    key = perm_key(uid)
+    write_doc("perms/" + key, {"id": key, "uid": uid, "name": b["name"].strip(), "status": "pending", "at": int(time.time() * 1000)})
+    start_session(g.user)
     return jsonify(ok=True)
 
 
@@ -336,13 +513,20 @@ def api_me():
 @app.post("/api/me/password")
 @api_login_required
 def api_change_password():
-    b = request.get_json(force=True)
-    if not check_password_hash(g.user["pw"], b.get("old", "")):
+    b = body()
+    user_key = "pw:" + g.user["id"]
+    if too_many((user_key, 8)):
+        return jsonify(error=LOCKED_MSG), 429
+    if not check_password_hash(g.user["pw"], str(b.get("old") or "")):
+        add_fail(user_key)
         return jsonify(error="הסיסמה הנוכחית שגויה."), 400
-    if len(b.get("new", "")) < 8:
-        return jsonify(error="הסיסמה החדשה צריכה להכיל לפחות 8 תווים."), 400
-    db().execute("UPDATE users SET pw=? WHERE id=?", (generate_password_hash(b["new"]), g.user["id"]))
+    new = str(b.get("new") or "")
+    if len(new) < MIN_PW:
+        return jsonify(error=PW_MSG), 400
+    db().execute("UPDATE users SET pw=? WHERE id=?", (generate_password_hash(new), g.user["id"]))
     db().commit()
+    # החיבורים במכשירים אחרים מתנתקים, החיבור הנוכחי נשאר
+    start_session(db().execute("SELECT * FROM users WHERE id=?", (g.user["id"],)).fetchone())
     return jsonify(ok=True)
 
 
@@ -351,7 +535,8 @@ def api_change_password():
 @owner_required
 def admin_users():
     rows = db().execute("SELECT id,username,name,role,created FROM users ORDER BY created").fetchall()
-    return jsonify(users=[dict(r) for r in rows], invite=setting("invite") or new_invite())
+    return jsonify(users=[dict(r) for r in rows], invite=setting("invite") or new_invite(),
+                   lastBackup=last_backup(), backups=len(list_backups()))
 
 
 @app.post("/api/admin/invite")
@@ -363,15 +548,15 @@ def admin_invite():
 @app.post("/api/admin/users/<uid>")
 @owner_required
 def admin_user_update(uid):
-    b = request.get_json(force=True)
+    b = body()
     u = db().execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
     if not u:
         return jsonify(error="המשתמש לא נמצא."), 404
     if uid == g.user["id"] and b.get("role") and b["role"] != "owner":
         return jsonify(error="אי אפשר להוריד לעצמך את הרשאות המנהל."), 400
     if "password" in b:
-        if len(b["password"]) < 8:
-            return jsonify(error="הסיסמה צריכה להכיל לפחות 8 תווים."), 400
+        if not isinstance(b["password"], str) or len(b["password"]) < MIN_PW:
+            return jsonify(error=PW_MSG), 400
         db().execute("UPDATE users SET pw=? WHERE id=?", (generate_password_hash(b["password"]), uid))
     if b.get("role") in ("user", "owner", "blocked"):
         db().execute("UPDATE users SET role=? WHERE id=?", (b["role"], uid))
@@ -394,13 +579,13 @@ def api_changes():
         if not can_read(g.user, r["path"]):
             continue
         out.append({"path": r["path"], "deleted": bool(r["deleted"]), "data": None if r["deleted"] else json.loads(r["data"])})
-    return jsonify(now=now, docs=out)
+    return jsonify(now=now, docs=out, access=access_sig(g.user))
 
 
 @app.put("/api/doc")
 @api_login_required
 def api_put():
-    b = request.get_json(force=True)
+    b = body()
     path, data = b.get("path"), b.get("data")
     if not valid_doc_path(path) or not isinstance(data, dict):
         return jsonify(error="נתיב או נתונים לא תקינים", code="invalid_argument"), 400
@@ -426,6 +611,62 @@ def api_delete():
     return jsonify(ok=True)
 
 
+# ---------------------------------------------------------------- automatic backup
+BACKUP_DIR = os.environ.get("INV_BACKUP_DIR", os.path.join(BASE, "backups", "auto"))
+BACKUP_KEEP = int(os.environ.get("INV_BACKUP_KEEP", "30"))
+BACKUP_RE = re.compile(r"^inventory-(\d{4}-\d{2}-\d{2})\.db$")
+
+
+def list_backups():
+    if not os.path.isdir(BACKUP_DIR):
+        return []
+    return sorted(f for f in os.listdir(BACKUP_DIR) if BACKUP_RE.match(f))
+
+
+def daily_backup():
+    """עותק אחד ליום של מסד הנתונים. נשמרים BACKUP_KEEP הימים האחרונים."""
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    name = "inventory-" + time.strftime("%Y-%m-%d") + ".db"
+    final = os.path.join(BACKUP_DIR, name)
+    if os.path.exists(final):
+        return None
+    tmp = final + ".part"
+    src = sqlite3.connect(DB_PATH, timeout=30)
+    dst = sqlite3.connect(tmp)
+    try:
+        src.backup(dst)  # עותק עקבי גם בזמן שהשרת כותב
+        ok = dst.execute("PRAGMA integrity_check").fetchone()[0]
+        dst.execute("PRAGMA journal_mode=DELETE")
+    finally:
+        dst.close()
+        src.close()
+    if ok != "ok":
+        os.remove(tmp)
+        raise RuntimeError("integrity check failed: " + ok)
+    os.replace(tmp, final)
+    for old in list_backups()[:-BACKUP_KEEP]:
+        os.remove(os.path.join(BACKUP_DIR, old))
+    return final
+
+
+def last_backup():
+    b = list_backups()
+    if not b:
+        return None
+    return int(os.path.getmtime(os.path.join(BACKUP_DIR, b[-1])) * 1000)
+
+
+def backup_loop():
+    while True:
+        try:
+            done = daily_backup()
+            if done:
+                print("גיבוי אוטומטי נשמר:", done, flush=True)
+        except Exception as e:  # לא מפילים את השרת בגלל גיבוי
+            print("הגיבוי האוטומטי נכשל:", e, flush=True)
+        time.sleep(60 * 60)  # בודקים כל שעה אם כבר יש גיבוי להיום
+
+
 # ---------------------------------------------------------------- run
 init_db()
 
@@ -433,6 +674,8 @@ if __name__ == "__main__":
     host = os.environ.get("INV_HOST", "0.0.0.0")
     port = int(os.environ.get("INV_PORT") or os.environ.get("PORT") or "8000")  # PORT – Render וכד'
     print(f"ניהול מלאי פועל: http://localhost:{port}")
+    import threading
+    threading.Thread(target=backup_loop, daemon=True).start()
     try:
         from waitress import serve
         serve(app, host=host, port=port, threads=8)

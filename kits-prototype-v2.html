@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>הדמיה 2: ערכות סמים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F7FB; --surface:#FFFFFF; --sunk:#EDF1F7; --ink:#0F172A; --muted:#475569; --line:#E2E8F0;
+  --accent:#2563EB; --accent-ink:#FFFFFF; --accent-soft:#DBEAFE;
+  --warn-bg:#FEF9C3; --warn-ink:#713F12; --warn-edge:#EAB308;
+  --bad-bg:#FFE4E6; --bad-ink:#9F1239; --bad-edge:#E11D48;
+  --ok-ink:#047857; --ok-bg:#D1FAE5; --focus:#1D4ED8;
+  --empty-bg:#F1F5F9; --empty-ink:#475569; --empty-edge:#94A3B8;
+  --r:20px; --r-sm:12px; --shadow:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B1220; --surface:#121B2D; --sunk:#0E1626; --ink:#E2E8F0; --muted:#94A3B8; --line:#22304A;
+  --accent:#60A5FA; --accent-ink:#0B1220; --accent-soft:#1B2F52;
+  --warn-bg:#3A2E05; --warn-ink:#FDE68A; --warn-edge:#EAB308; --bad-bg:#3F1219; --bad-ink:#FECDD3; --bad-edge:#F43F5E;
+  --ok-ink:#86EFAC; --ok-bg:#0F3A2E; --focus:#93C5FD; --empty-bg:#1A2436; --empty-ink:#CBD5E1; --empty-edge:#64748B; --shadow:none; color-scheme:dark}}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Rubik","Segoe UI",Arial,sans-serif;line-height:1.55}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
+svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.proto{background:#0F172A;color:#E2E8F0;font-size:.88rem;padding:8px 16px;text-align:center}
+.proto strong{color:#93C5FD}
+header.top{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{max-width:1180px;margin:0 auto;padding:.6rem 1.25rem;display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1.5rem}
+.brand{display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:1.1rem;margin-inline-end:auto}
+.mark{width:2.1rem;height:2.1rem;border-radius:.65rem;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+nav.tabs{display:flex;gap:.2rem;overflow-x:auto;background:var(--sunk);padding:.25rem;border-radius:.9rem;scrollbar-width:none}
+nav.tabs a{white-space:nowrap;text-decoration:none;color:var(--muted);font-weight:500;padding:.45rem .9rem;border-radius:.7rem;min-height:40px;display:flex;align-items:center}
+nav.tabs a.on{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+nav.tabs a .new{font-size:.7rem;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:0 .4rem;margin-inline-start:.35rem}
+@media (max-width:759px){nav.tabs{order:3;width:100%}}
+
+main{max-width:1180px;margin:0 auto;padding:1.4rem 1.25rem 6rem}
+.page-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:1rem;justify-content:space-between;margin-bottom:1.1rem}
+h1{font-size:1.85rem;line-height:1.2;margin:0 0 .2rem;letter-spacing:-.01em}
+h2{font-size:1.1rem;margin:0}
+.sub{color:var(--muted);margin:0}
+.acts{display:flex;gap:.5rem;flex-wrap:wrap}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-height:44px;padding:.5rem 1rem;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;white-space:nowrap;transition:transform 160ms var(--ease-out),background-color 150ms ease,filter 150ms ease}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.sm{min-height:38px;padding:.3rem .7rem;font-size:.9rem}
+.btn.warn{background:var(--warn-bg);color:var(--warn-ink);border-color:color-mix(in srgb,var(--warn-edge) 45%,transparent)}
+.btn.gray{background:var(--empty-bg);color:var(--empty-ink);border-color:color-mix(in srgb,var(--empty-edge) 45%,transparent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+@media (hover:hover) and (pointer:fine){.btn:hover{background:var(--sunk)} .btn.primary:hover{background:var(--accent);filter:brightness(1.08)}}
+label{font-weight:600;font-size:.93rem}
+input,select{font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r-sm);padding:.55rem .75rem;min-height:44px;width:100%;transition:border-color 150ms ease,box-shadow 150ms ease}
+input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input[type=checkbox]{width:1.15rem;height:1.15rem;min-height:auto;accent-color:var(--accent)}
+.field{display:flex;flex-direction:column;gap:.3rem}
+.hint{font-size:.84rem;color:var(--muted);font-weight:400}
+.err{color:var(--bad-ink);font-size:.9rem;min-height:1.2em;margin:0;font-weight:600}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem}
+@media (max-width:560px){.three{grid-template-columns:1fr}}
+
+/* tiles */
+.stats{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:.85rem;margin-bottom:1.1rem}
+.stat{border-radius:var(--r);padding:1rem 1.1rem;display:grid;gap:.4rem;align-content:start;border:0;font:inherit;text-align:start;cursor:pointer;transition:transform 160ms var(--ease-out)}
+.stat:active{transform:scale(.98)}
+.stat b{font-size:1.9rem;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-weight:500}
+.stat .ic{width:2.2rem;height:2.2rem;border-radius:.7rem;display:grid;place-items:center;background:rgba(255,255,255,.6)}
+.s-vault{grid-row:span 2;background:var(--accent);color:var(--accent-ink);align-content:space-between}
+.s-vault .ic{background:rgba(255,255,255,.18)} .s-vault b{font-size:clamp(2.6rem,6vw,3.4rem)}
+.s-signed{background:#FEF9C3;color:#854D0E} .s-empty{background:#E2E8F0;color:#334155} .s-all{background:#EDE9FE;color:#6D28D9} .s-units{background:#D1FAE5;color:#047857}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .s-signed{background:#3A2E05;color:#FDE68A} :root:not([data-theme="light"]) .s-empty{background:#1E293B;color:#CBD5E1} :root:not([data-theme="light"]) .s-all{background:#2A1E4A;color:#C4B5FD} :root:not([data-theme="light"]) .s-units{background:#0F3A2E;color:#6EE7B7} :root:not([data-theme="light"]) .stat:not(.s-vault) .ic{background:rgba(255,255,255,.08)}}
+.stat[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:2px}
+@media (max-width:640px){.stats{grid-template-columns:1fr 1fr;gap:.6rem}.s-vault{grid-row:auto;grid-column:span 2;display:flex;align-items:center;gap:.8rem}.s-vault span{margin-inline-start:auto}.stat b{font-size:1.6rem}}
+
+.notice{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-radius:var(--r-sm);margin-bottom:1rem;background:var(--warn-bg);color:var(--warn-ink);border:1px solid color-mix(in srgb,var(--warn-edge) 40%,transparent)}
+.notice.gray{background:var(--empty-bg);color:var(--empty-ink);border-color:color-mix(in srgb,var(--empty-edge) 40%,transparent)}
+.notice span{flex:1}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:1rem 1.1rem;margin-bottom:1rem}
+.panel-h{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-bottom:.8rem}
+.toolbar{display:grid;grid-template-columns:2fr 1fr;gap:.75rem;margin-bottom:.9rem}
+@media (max-width:640px){.toolbar{grid-template-columns:1fr}}
+.seg{display:flex;flex-wrap:wrap;gap:.2rem;background:var(--sunk);padding:.25rem;border-radius:.9rem;margin-bottom:.9rem}
+.seg button{font:inherit;font-weight:500;border:0;background:transparent;color:var(--muted);padding:.4rem .85rem;border-radius:.7rem;cursor:pointer;min-height:38px;transition:transform 160ms var(--ease-out)}
+.seg button:active{transform:scale(.97)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.seg .n{font-variant-numeric:tabular-nums;opacity:.75;margin-inline-start:.3rem}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem}
+.kit{position:relative;display:grid;gap:.2rem;text-align:start;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:.7rem .8rem;cursor:pointer;border-inline-start:5px solid var(--accent);transition:transform 160ms var(--ease-out),box-shadow 150ms ease}
+.kit:active{transform:scale(.97)}
+@media (hover:hover) and (pointer:fine){.kit:hover{box-shadow:0 4px 14px rgba(15,23,42,.08)}}
+.kit .num{font-weight:700;font-size:1.05rem;direction:ltr;text-align:end;font-variant-numeric:tabular-nums}
+.kit small{color:var(--muted);font-size:.8rem;line-height:1.35;min-height:2.2em}
+.kit.signed{border-inline-start-color:var(--warn-edge)} .kit.empty{border-inline-start-color:var(--empty-edge);background:var(--empty-bg)}
+.kit.sel{box-shadow:0 0 0 3px var(--accent)}
+.kit .tick{position:absolute;top:.5rem;inset-inline-end:.5rem;width:1.3rem;height:1.3rem;border-radius:.4rem;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.kit.sel .tick{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.kit .tick svg{width:.85rem;height:.85rem;stroke-width:3}
+.st{display:inline-flex;align-items:center;gap:.3rem;padding:.12rem .55rem;border-radius:999px;font-size:.78rem;font-weight:600;width:fit-content}
+.st.vault{background:var(--accent-soft);color:var(--accent)} .st.signed{background:var(--warn-bg);color:var(--warn-ink)} .st.empty{background:var(--surface);color:var(--empty-ink);border:1px solid var(--empty-edge)}
+.empty-msg{color:var(--muted);padding:1rem 0;margin:0}
+
+/* multi-select action bar */
+.bar{position:fixed;bottom:1rem;inset-inline:0;margin:auto;width:min(760px,calc(100% - 2rem));background:var(--ink);color:var(--surface);border-radius:var(--r);padding:.7rem .9rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;z-index:20;box-shadow:0 12px 32px rgba(15,23,42,.3);transition:opacity 200ms ease,transform 200ms var(--ease-out)}
+.bar[hidden]{display:flex!important;opacity:0;transform:translateY(16px);pointer-events:none}
+.bar span{flex:1;font-weight:600;min-width:8rem}
+.bar .btn{min-height:40px}
+
+table{width:100%;border-collapse:collapse;font-size:.94rem}
+th,td{padding:.55rem .6rem;text-align:start;border-bottom:1px solid var(--line)}
+th{background:var(--sunk);font-weight:500;color:var(--muted);font-size:.85rem}
+td.n{font-variant-numeric:tabular-nums;font-weight:700}
+td.tot{background:var(--accent-soft)}
+tbody tr:last-child td,tbody tr:last-child th{border-bottom:0}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-sm)}
+.log{list-style:none;margin:0;padding:0;display:grid;gap:.4rem;max-height:340px;overflow-y:auto}
+.log li{padding:.5rem .7rem;background:var(--sunk);border-radius:var(--r-sm);font-size:.9rem;border-inline-start:4px solid var(--line)}
+.log li.in{border-inline-start-color:var(--ok-ink)} .log li.out{border-inline-start-color:var(--bad-edge)} .log li.move{border-inline-start-color:var(--accent)}
+.log li time{display:block;color:var(--muted);font-size:.78rem}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media (max-width:860px){.cols{grid-template-columns:1fr}}
+
+dialog{border:0;border-radius:var(--r);padding:0;max-width:min(560px,94vw);width:100%;background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog[open]{animation:dlg-in 200ms var(--ease-out)}
+@keyframes dlg-in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+dialog::backdrop{background:rgba(15,23,42,.5)}
+dialog form{padding:1.3rem;display:grid;gap:.85rem;max-height:88vh;overflow-y:auto}
+dialog h2{font-size:1.3rem}
+.dlg-actions{display:flex;gap:.6rem;flex-wrap:wrap;padding-top:.3rem}
+.comp{display:grid;gap:.35rem}
+.comp>div{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.45rem .7rem;background:var(--sunk);border-radius:.6rem}
+.comp>.use-row,.use-row{display:grid;grid-template-columns:1fr 90px 1.3fr;gap:.5rem;align-items:center}
+.comp>.tpl-row{display:grid}
+.use-row.hd{font-size:.8rem;color:var(--muted);font-weight:500;padding:0 .2rem}
+@media (max-width:560px){.use-row{grid-template-columns:1fr 80px}.use-row .bsel{grid-column:1/-1}}
+.tpl-row{display:grid;grid-template-columns:1fr 110px;gap:.6rem;align-items:center}
+.timeline{list-style:none;margin:0;padding:0;display:grid;gap:.35rem;max-height:220px;overflow-y:auto}
+.timeline li{font-size:.88rem;padding:.4rem .6rem;border-inline-start:3px solid var(--line)}
+.timeline li time{color:var(--muted);font-size:.78rem;display:block}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:.4rem;max-height:300px;overflow-y:auto;padding:.2rem}
+.checks label{display:flex;align-items:center;gap:.4rem;font-weight:600;padding:.35rem .5rem;background:var(--sunk);border-radius:.6rem;direction:ltr;justify-content:flex-end}
+.toast{position:fixed;top:1rem;inset-inline-start:50%;transform:translateX(50%) translateY(-8px);background:var(--ink);color:var(--surface);padding:.7rem 1.1rem;border-radius:var(--r-sm);font-weight:600;z-index:60;opacity:0;pointer-events:none;transition:opacity 200ms ease,transform 200ms var(--ease-out);max-width:90vw;box-shadow:0 8px 24px rgba(15,23,42,.2)}
+.toast.show{opacity:1;transform:translateX(50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" x2="12" y1="22" y2="12"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+  <symbol id="i-open" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5Z"/><path d="M3 8l9 5 9-5"/><path d="M8 5.5 17 10.5"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></symbol>
+  <symbol id="i-pill" viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+</svg>
+
+<div class="proto"><strong>הדמיה 2 בלבד:</strong> הנתונים לדוגמה ונשמרים רק בדף הזה. החתימה של הרופא נשארת על הנייר, והתוכנה רק עוקבת אחרי הקופסאות והכמויות.</div>
+<header class="top"><div class="top-in">
+  <div class="brand"><span class="mark"><svg class="i"><use href="#i-box"/></svg></span>ניהול מלאי</div>
+  <nav class="tabs" aria-label="ניווט לדוגמה"><a href="#">לוח בקרה</a><a href="#">מלאי</a><a href="#" class="on" aria-current="page">ערכות סמים<span class="new">חדש</span></a><a href="#">החתמה</a><a href="#">ספר סמים</a><a href="#">ספירת מלאי</a><a href="#">מיקומים וערכות</a></nav>
+</div></header>
+
+<main>
+  <div class="page-head">
+    <div><h1>ערכות סמים</h1><p class="sub">קופסאות סגורות וממוספרות. כל קופסה היא מלאה בכספת, חתומה אצל רופא, או ריקה.</p></div>
+    <div class="acts">
+      <button class="btn primary" type="button" id="bMulti">בחירת כמה קופסאות</button>
+      <button class="btn" type="button" id="bFillAll">מילוי כל הריקות</button>
+      <button class="btn" type="button" id="bCount">ספירת קופסאות בכספת</button>
+      <button class="btn" type="button" id="bAdd">+ הוספת קופסאות</button>
+      <button class="btn" type="button" id="bTpl">תבנית</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <div id="alerts"></div>
+
+  <section class="panel" aria-labelledby="hKits">
+    <div class="panel-h"><h2 id="hKits">כל הקופסאות</h2><span class="hint" id="multiHint" hidden>מצב בחירה: לוחצים על קופסאות כדי לסמן אותן</span></div>
+    <div class="seg" role="group" aria-label="סינון לפי מצב" id="seg"></div>
+    <div class="toolbar">
+      <div class="field"><label for="q">חיפוש מספר קופסה או הערה</label><input id="q" type="search" placeholder="למשל SA17 או כהן" autocomplete="off"></div>
+      <div class="field"><label for="ser">סדרה</label><select id="ser"></select></div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="hUnits">
+    <div class="panel-h"><h2 id="hUnits">איפה נמצאים הסמים</h2><span class="hint">קופסה ריקה לא מכילה כלום, ולכן אין עמודה כזו</span></div>
+    <div class="tbl"><table><thead><tr><th>סם</th><th>מלאי חופשי</th><th>בקופסאות בכספת</th><th>בקופסאות חתומות</th><th>סה״כ בקופסאות</th><th>סה״כ הכל</th></tr></thead><tbody id="units"></tbody></table></div>
+    <p class="hint" style="margin:.6rem 0 0">"סה״כ בקופסאות" הוא מה שיופיע בעמודה "מלאי בערכות" בספר הסמים.</p>
+  </section>
+
+  <div class="cols">
+    <section class="panel" aria-labelledby="hLog">
+      <div class="panel-h"><h2 id="hLog">רישומים שנכנסים לספר הסמים</h2></div>
+      <ul class="log" id="log"></ul>
+    </section>
+    <section class="panel" aria-labelledby="hStock">
+      <div class="panel-h"><h2 id="hStock">המלאי החופשי (לדוגמה)</h2></div>
+      <div class="tbl"><table><thead><tr><th>סם</th><th>אצווה</th><th>תוקף</th><th>כמות</th></tr></thead><tbody id="stock"></tbody></table></div>
+    </section>
+  </div>
+</main>
+
+<div class="bar" id="bar" hidden role="region" aria-label="פעולות על קופסאות שנבחרו">
+  <span id="barN"></span>
+  <button class="btn sm warn" type="button" data-bulk="sign">יצאו חתומות</button>
+  <button class="btn sm" type="button" data-bulk="sealed">חזרו סגורות</button>
+  <button class="btn sm primary" type="button" data-bulk="fill">מילוי</button>
+  <button class="btn sm" type="button" data-bulk="clear" style="background:transparent;color:inherit;border-color:rgba(255,255,255,.3)">ביטול</button>
+</div>
+
+<!-- kit details -->
+<dialog id="dKit" aria-labelledby="dKitT"><form method="dialog">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem"><h2 id="dKitT"></h2><span id="dKitSt"></span></div>
+  <p class="sub" id="dKitWho"></p>
+  <div><h3 style="margin:0 0 .4rem;font-size:1rem">תכולה</h3><div class="comp" id="dKitComp"></div></div>
+  <div><h3 style="margin:0 0 .4rem;font-size:1rem">היסטוריה</h3><ul class="timeline" id="dKitHist"></ul></div>
+  <div class="dlg-actions" id="dKitActs"></div>
+</form></dialog>
+
+<!-- sign out -->
+<dialog id="dSign" aria-labelledby="dSignT"><form method="dialog" novalidate>
+  <h2 id="dSignT"></h2>
+  <p class="sub">החתימה עצמה נעשית על הנייר. כאן רק מסמנים שהקופסה יצאה.</p>
+  <div class="field"><label for="sTo">ליד מי / מספר טופס (לא חובה)</label><input id="sTo" autocomplete="off" placeholder="למשל: ד״ר כהן, טופס 1234"></div>
+  <div class="dlg-actions"><button class="btn warn" type="button" id="sOk">יצאה חתומה</button><button class="btn" value="cancel">ביטול</button></div>
+</form></dialog>
+
+<!-- return opened -->
+<dialog id="dUse" aria-labelledby="dUseT"><form method="dialog" novalidate>
+  <h2 id="dUseT"></h2>
+  <p class="sub">מסמנים כמה נוצל. מה שלא נוצל חוזר למלאי החופשי, והקופסה הופכת לריקה. כך אין אף פעם קופסה חלקית.</p>
+  <div class="comp" id="useRows"></div>
+  <div class="field"><label for="uNote">הערה (לא חובה)</label><input id="uNote" autocomplete="off" placeholder="למשל: אירוע רב נפגעים"></div>
+  <p class="err" id="uErr" role="alert"></p>
+  <div class="dlg-actions"><button class="btn primary" type="button" id="uOk">רישום והפיכה לריקה</button><button class="btn" value="cancel">ביטול</button></div>
+</form></dialog>
+
+<!-- fill -->
+<dialog id="dFill" aria-labelledby="dFillT"><form method="dialog">
+  <h2 id="dFillT"></h2>
+  <p class="sub">כל קופסה מתמלאת לגמרי לפי התבנית. המערכת בוחרת את האצוות עם התוקף הקרוב ביותר ומורידה אותן מהמלאי החופשי.</p>
+  <div class="tbl"><table><thead><tr><th>סם</th><th>נדרש</th><th>יירד מאצווה</th></tr></thead><tbody id="fillRows"></tbody></table></div>
+  <p class="err" id="fErr" role="alert"></p>
+  <div class="dlg-actions"><button class="btn primary" type="button" id="fOk">מילוי והחזרה לכספת</button><button class="btn" value="cancel">ביטול</button></div>
+</form></dialog>
+
+<!-- count -->
+<dialog id="dCount" aria-labelledby="dCountT"><form method="dialog">
+  <h2 id="dCountT">ספירת קופסאות בכספת</h2>
+  <p class="sub">מסמנים כל קופסה שנמצאת פיזית בכספת. בסוף מוצגות הקופסאות שלא נמצאו.</p>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn sm" type="button" id="cAll">סימון הכל</button><button class="btn sm" type="button" id="cNone">ניקוי</button></div>
+  <div class="checks" id="cList"></div>
+  <p class="hint" id="cRes" aria-live="polite"></p>
+  <div class="dlg-actions"><button class="btn primary" type="button" id="cOk">סיום הספירה</button><button class="btn" value="cancel">ביטול</button></div>
+</form></dialog>
+
+<!-- add kits -->
+<dialog id="dAdd" aria-labelledby="dAddT"><form method="dialog" novalidate>
+  <h2 id="dAddT">הוספת קופסאות</h2>
+  <div class="three">
+    <div class="field"><label for="aSer">סדרה</label><input id="aSer" dir="ltr" value="SA" autocomplete="off"></div>
+    <div class="field"><label for="aFrom">ממספר</label><input id="aFrom" type="number" min="1" inputmode="numeric"></div>
+    <div class="field"><label for="aTo">עד מספר</label><input id="aTo" type="number" min="1" inputmode="numeric"></div>
+  </div>
+  <div class="field"><label for="aState">במה הקופסאות מתחילות</label><select id="aState">
+    <option value="empty">ריקות (ממלאים אחר כך מהמלאי)</option>
+    <option value="fill">מלאות: למלא עכשיו מהמלאי החופשי</option>
+    <option value="built">מלאות כבר עכשיו בכספת (הכנסה ראשונה, בלי להוריד מהמלאי)</option>
+  </select></div>
+  <p class="hint" id="aPreview"></p>
+  <p class="err" id="aErr" role="alert"></p>
+  <div class="dlg-actions"><button class="btn primary" type="button" id="aOk">הוספה</button><button class="btn" value="cancel">ביטול</button></div>
+</form></dialog>
+
+<!-- template -->
+<dialog id="dTpl" aria-labelledby="dTplT"><form method="dialog">
+  <h2 id="dTplT">תבנית קופסה</h2>
+  <p class="sub">ממה מורכבת קופסה מלאה. אפשר לקבוע תבנית שונה לכל סדרה.</p>
+  <div class="field"><label for="tSer">סדרה</label><select id="tSer"></select></div>
+  <div class="comp" id="tRows"></div>
+  <div class="dlg-actions"><button class="btn primary" type="button" id="tOk">שמירה</button><button class="btn" value="cancel">ביטול</button></div>
+</form></dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DAY=864e5, now=()=>Date.now();
+const fmt=t=>new Date(t).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const days=t=>Math.floor((now()-t)/DAY);
+const DRUGS=['קטמין 50','קטמין 500','אקטיק','מידזולם','מורפיום'];
+const STATUS={vault:'בכספת',signed:'חתומה',empty:'ריקה'};
+
+/* ---------- sample data ---------- */
+const TPL={SA:{'קטמין 50':2,'קטמין 500':1,'אקטיק':2,'מידזולם':3,'מורפיום':3}};
+TPL.SAH=Object.assign({},TPL.SA);
+const STOCK=[
+  {drug:'מורפיום',batch:'M2401',exp:'2026-12',qty:18},{drug:'מורפיום',batch:'M2512',exp:'2027-08',qty:40},
+  {drug:'מידזולם',batch:'Z2310',exp:'2027-01',qty:25},{drug:'מידזולם',batch:'Z2507',exp:'2027-11',qty:30},
+  {drug:'קטמין 50',batch:'K5-118',exp:'2027-03',qty:22},{drug:'קטמין 50',batch:'K5-140',exp:'2028-01',qty:20},
+  {drug:'קטמין 500',batch:'K50-31',exp:'2027-05',qty:9},{drug:'קטמין 500',batch:'K50-44',exp:'2028-02',qty:10},
+  {drug:'אקטיק',batch:'A8812',exp:'2027-02',qty:14},{drug:'אקטיק',batch:'A9055',exp:'2027-09',qty:16}
+];
+const LOG=[];
+const kits={};
+function addKit(series,n,status,text,at){ const id=series+n; kits[id]={id,series,n,status,to:'',since:null,history:[{at:at||now()-40*DAY,text}]}; return kits[id]; }
+for(let i=1;i<=100;i++) addKit('SA',i,'vault','נרשמה במערכת: מלאה בכספת');
+for(let i=1;i<=20;i++) addKit('SAH',i,'vault','נרשמה במערכת: מלאה בכספת');
+[['SA3','ד״ר כהן',2],['SA7','ד״ר לוי',1],['SA12','',19],['SA25','ד״ר ברק',5],['SA41','',0],['SAH2','ד״ר לוי',3],['SAH9','טופס 4471',16]]
+  .forEach(([id,to,ago])=>{ const k=kits[id]; const t=now()-ago*DAY-3600e3; k.status='signed'; k.to=to; k.since=t; k.history.push({at:t,text:'יצאה חתומה'+(to?' · '+to:'')}); });
+['SA18','SA33','SAH5'].forEach(id=>{ const k=kits[id]; const t=now()-2*DAY; k.status='empty'; k.history.push({at:t-DAY,text:'יצאה חתומה'},{at:t,text:'חזרה פתוחה. מה שלא נוצל הוחזר למלאי, והקופסה ריקה'}); });
+
+/* ---------- helpers ---------- */
+const tplOf=k=>TPL[k.series]||TPL.SA;
+const contentsOf=k=>k.status==='empty'?{}:tplOf(k);
+const listText=o=>Object.entries(o).filter(([,q])=>q>0).map(([d,q])=>`${d} ${q}`).join(', ')||'כלום';
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove('show'),3000); }
+function ledger(text,kind){ LOG.unshift({at:now(),text,kind:kind||'move'}); }
+const stockOf=d=>STOCK.filter(s=>s.drug===d).reduce((a,s)=>a+s.qty,0);
+function pickBatches(d,qty){ const out=[]; let left=qty; STOCK.filter(s=>s.drug===d&&s.qty>0).sort((a,b)=>a.exp.localeCompare(b.exp)).forEach(s=>{ if(left<=0) return; const q=Math.min(left,s.qty); out.push({s,q}); left-=q; }); return {out,short:left}; }
+const seriesList=()=>[...new Set(Object.values(kits).map(k=>k.series))];
+const sortKits=a=>a.sort((x,y)=>x.series.localeCompare(y.series)||x.n-y.n);
+function setStatus(k,status,text,extra){ k.status=status; if(status!=='signed'){ k.to=''; k.since=null; } k.history.push({at:now(),text}); Object.assign(k,extra||{}); }
+/* needs for filling a list of kits: {drug: qty} */
+function needFor(list){ const need={}; list.forEach(k=>Object.entries(tplOf(k)).forEach(([d,q])=>need[d]=(need[d]||0)+q)); return need; }
+
+/* ---------- render ---------- */
+let filt='all', multi=false; const sel=new Set();
+function render(){
+  const all=Object.values(kits); const c={vault:0,signed:0,empty:0}; all.forEach(k=>c[k.status]++);
+  const unitsInKits=all.reduce((a,k)=>a+Object.values(contentsOf(k)).reduce((x,y)=>x+y,0),0);
+  $('#stats').innerHTML=[
+    ['vault','s-vault','i-lock',c.vault,'בכספת, מלאות'],['signed','s-signed','i-pen',c.signed,'חתומות (יצאו)'],['empty','s-empty','i-open',c.empty,'ריקות'],
+    ['all','s-all','i-grid',all.length,'סה״כ קופסאות'],['all','s-units','i-pill',unitsInKits,'יחידות סם בקופסאות']
+  ].map(([f,cl,ic,n,l],i)=>`<button type="button" class="stat ${cl}" data-f="${f}" ${i<3&&filt===f?'aria-pressed="true"':''}><span class="ic"><svg class="i"><use href="#${ic}"/></svg></span><b>${n}</b><span>${l}</span></button>`).join('');
+  const long=all.filter(k=>k.status==='signed'&&days(k.since)>=14);
+  $('#alerts').innerHTML=(long.length?`<div class="notice"><svg class="i"><use href="#i-clock"/></svg><span><strong>${long.length} קופסאות חתומות יותר משבועיים:</strong> ${long.map(k=>`${esc(k.id)}${k.to?' ('+esc(k.to)+')':''}, ${days(k.since)} ימים`).join(' · ')}</span></div>`:'')
+    +(c.empty?`<div class="notice gray"><svg class="i"><use href="#i-open"/></svg><span><strong>${c.empty} קופסאות ריקות</strong> ממתינות למילוי.</span><button class="btn sm" type="button" id="nFill">מילוי עכשיו</button></div>`:'');
+  $('#seg').innerHTML=[['all','הכל',all.length],['vault','בכספת',c.vault],['signed','חתומות',c.signed],['empty','ריקות',c.empty]]
+    .map(([f,l,n])=>`<button type="button" data-f="${f}" aria-pressed="${filt===f}">${l}<span class="n">${n}</span></button>`).join('');
+  const ser=$('#ser'), cur=ser.value; ser.innerHTML='<option value="">כל הסדרות</option>'+seriesList().map(s=>`<option ${s===cur?'selected':''}>${esc(s)}</option>`).join('');
+  const q=$('#q').value.trim().toLowerCase();
+  const list=sortKits(all.filter(k=>(filt==='all'||k.status===filt)&&(!ser.value||k.series===ser.value)&&(!q||k.id.toLowerCase().includes(q)||(k.to&&k.to.toLowerCase().includes(q)))));
+  $('#grid').innerHTML=list.length?list.map(k=>`<button type="button" class="kit ${k.status}${sel.has(k.id)?' sel':''}" data-kit="${esc(k.id)}" ${multi?`aria-pressed="${sel.has(k.id)}"`:''}>${multi?'<span class="tick" aria-hidden="true"><svg class="i"><use href="#i-check"/></svg></span>':''}<span class="num">${esc(k.id)}</span><span class="st ${k.status}">${STATUS[k.status]}</span><small>${k.status==='signed'?(k.to?esc(k.to)+' · ':'')+(days(k.since)?days(k.since)+' ימים':'היום'):k.status==='empty'?'ממתינה למילוי':'מלאה וסגורה'}</small></button>`).join(''):'<p class="empty-msg">אין קופסאות שמתאימות לחיפוש.</p>';
+  $('#units').innerHTML=DRUGS.map(d=>{ let v=0,s=0; all.forEach(k=>{ const q=contentsOf(k)[d]||0; if(k.status==='vault') v+=q; else if(k.status==='signed') s+=q; }); const f=stockOf(d); return `<tr><th scope="row" style="background:none;color:var(--ink);font-weight:600">${d}</th><td class="n">${f}</td><td class="n">${v}</td><td class="n">${s}</td><td class="n tot">${v+s}</td><td class="n">${f+v+s}</td></tr>`; }).join('');
+  $('#log').innerHTML=LOG.length?LOG.slice(0,40).map(l=>`<li class="${l.kind}"><time>${fmt(l.at)}</time>${esc(l.text)}</li>`).join(''):'<li>עוד אין רישומים. נסו להוציא קופסה, להחזיר אותה פתוחה ולמלא אותה.</li>';
+  $('#stock').innerHTML=STOCK.slice().sort((a,b)=>a.drug.localeCompare(b.drug,'he')||a.exp.localeCompare(b.exp)).map(s=>`<tr><td>${s.drug}</td><td dir="ltr" style="text-align:end">${s.batch}</td><td>${s.exp.split('-').reverse().join('/')}</td><td class="n">${s.qty}</td></tr>`).join('');
+  $('#bar').hidden=!(multi&&sel.size); $('#barN').textContent=`${sel.size} נבחרו`;
+  $('#multiHint').hidden=!multi; $('#bMulti').textContent=multi?'סיום בחירה':'בחירת כמה קופסאות';
+}
+document.addEventListener('click',e=>{
+  if(e.target.closest('#nFill')){ openFill(Object.values(kits).filter(k=>k.status==='empty').map(k=>k.id)); return; }
+  const f=e.target.closest('[data-f]'); if(f){ filt=(f.dataset.f===filt&&f.classList.contains('stat'))?'all':f.dataset.f; render(); if(f.classList.contains('stat')) $('#hKits').scrollIntoView({behavior:'smooth',block:'start'}); return; }
+  const k=e.target.closest('[data-kit]'); if(!k) return;
+  if(multi){ const id=k.dataset.kit; sel.has(id)?sel.delete(id):sel.add(id); render(); } else openKit(k.dataset.kit);
+});
+$('#q').addEventListener('input',render); $('#ser').addEventListener('change',render);
+$('#bMulti').addEventListener('click',()=>{ multi=!multi; sel.clear(); render(); });
+
+/* ---------- bulk ---------- */
+$('#bar').addEventListener('click',e=>{
+  const b=e.target.closest('[data-bulk]'); if(!b) return; const a=b.dataset.bulk; const list=[...sel].map(id=>kits[id]);
+  if(a==='clear'){ sel.clear(); render(); return; }
+  if(a==='sign'){ const ok=list.filter(k=>k.status==='vault'); if(!ok.length) return toast('אף קופסה שנבחרה לא נמצאת בכספת.'); openSign(ok.map(k=>k.id)); }
+  if(a==='sealed'){ const ok=list.filter(k=>k.status==='signed'); if(!ok.length) return toast('אף קופסה שנבחרה לא חתומה.'); ok.forEach(k=>setStatus(k,'vault','חזרה סגורה לכספת')); ledger(`חזרו סגורות לכספת: ${ok.map(k=>k.id).join(', ')}.`); sel.clear(); render(); toast(`${ok.length} קופסאות חזרו לכספת`+(ok.length<list.length?` (${list.length-ok.length} דולגו כי לא היו חתומות)`:'')); }
+  if(a==='fill'){ const ok=list.filter(k=>k.status==='empty'); if(!ok.length) return toast('אף קופסה שנבחרה לא ריקה.'); openFill(ok.map(k=>k.id)); }
+});
+
+/* ---------- kit details ---------- */
+function openKit(id){
+  const k=kits[id]; $('#dKitT').textContent='קופסה '+k.id; $('#dKitSt').innerHTML=`<span class="st ${k.status}">${STATUS[k.status]}</span>`;
+  $('#dKitWho').textContent=k.status==='signed'?`יצאה חתומה ${k.to?'('+k.to+') ':''}ב־${fmt(k.since)}`:k.status==='empty'?'ריקה. צריך למלא אותה מהמלאי החופשי.':'מלאה וסגורה בכספת.';
+  const t=tplOf(k), full=k.status!=='empty';
+  $('#dKitComp').innerHTML=Object.keys(t).map(d=>`<div><span>${d}</span><strong>${full?t[d]:0} / ${t[d]}</strong></div>`).join('');
+  $('#dKitHist').innerHTML=k.history.slice().reverse().map(h=>`<li><time>${fmt(h.at)}</time>${esc(h.text)}</li>`).join('');
+  const A=$('#dKitActs');
+  A.innerHTML=(k.status==='vault'?`<button class="btn warn" type="button" data-a="sign">יצאה חתומה</button>`
+    :k.status==='signed'?`<button class="btn primary" type="button" data-a="sealed">חזרה סגורה</button><button class="btn gray" type="button" data-a="opened">חזרה פתוחה</button>`
+    :`<button class="btn primary" type="button" data-a="fill">מילוי מהמלאי</button>`)+'<button class="btn" value="close">סגירה</button>';
+  A.onclick=ev=>{ const b=ev.target.closest('[data-a]'); if(!b) return; $('#dKit').close();
+    ({sign:()=>openSign([k.id]),sealed:()=>{ setStatus(k,'vault','חזרה סגורה לכספת'); ledger(`קופסה ${k.id} חזרה סגורה לכספת.`); render(); toast(`קופסה ${k.id} חזרה לכספת`); },opened:()=>openUse(k.id),fill:()=>openFill([k.id])})[b.dataset.a](); };
+  $('#dKit').showModal();
+}
+
+/* ---------- sign out (no signature in the app) ---------- */
+let signIds=[];
+function openSign(ids){ signIds=ids; $('#dSignT').textContent=ids.length===1?`הוצאת קופסה ${ids[0]}`:`הוצאת ${ids.length} קופסאות`; $('#sTo').value=''; $('#dSign').showModal(); $('#sTo').focus(); }
+$('#sOk').addEventListener('click',()=>{
+  const to=$('#sTo').value.trim(); const t=now();
+  signIds.forEach(id=>{ const k=kits[id]; k.status='signed'; k.to=to; k.since=t; k.history.push({at:t,text:'יצאה חתומה'+(to?' · '+to:'')}); });
+  ledger(`יצאו חתומות: ${signIds.join(', ')}${to?' · '+to:''}. התכולה עוברת לעמודה "בקופסאות חתומות".`);
+  $('#dSign').close(); sel.clear(); render(); toast(signIds.length===1?`קופסה ${signIds[0]} יצאה`:`${signIds.length} קופסאות יצאו`);
+});
+
+/* ---------- return opened: used goes out, the rest back to free stock, box becomes empty ---------- */
+let useId=null;
+function openUse(id){ useId=id; const k=kits[id], t=tplOf(k); $('#dUseT').textContent=`קופסה ${id} חזרה פתוחה`;
+  $('#useRows').innerHTML='<div class="use-row hd" style="background:none"><span>סם</span><span>נוצל</span><span class="bsel">מה שלא נוצל חוזר לאצווה</span></div>'+Object.keys(t).map(d=>{
+    const bs=STOCK.filter(s=>s.drug===d).sort((a,b)=>a.exp.localeCompare(b.exp));
+    return `<div class="use-row"><label for="u-${d}">${d} <span class="hint">(בקופסה ${t[d]})</span></label><input id="u-${d}" data-u="${d}" type="number" min="0" max="${t[d]}" value="0" inputmode="numeric"><select class="bsel" data-b="${d}" aria-label="אצווה להחזרת ${d}">${bs.map(s=>`<option value="${s.batch}">${s.batch} · תוקף ${s.exp.split('-').reverse().join('/')}</option>`).join('')}</select></div>`; }).join('');
+  $('#uNote').value=''; $('#uErr').textContent=''; $('#dUse').showModal(); }
+$('#uOk').addEventListener('click',()=>{
+  const k=kits[useId], t=tplOf(k), used={}, back={}; let any=false;
+  for(const i of document.querySelectorAll('#useRows [data-u]')){ const d=i.dataset.u, q=parseInt(i.value,10)||0; if(q<0||q>t[d]) return $('#uErr').textContent=`${d}: אפשר בין 0 ל־${t[d]}.`; used[d]=q; back[d]=t[d]-q; if(q) any=true; }
+  if(!any) return $('#uErr').textContent='לא סומן שימוש. אם הקופסה חזרה סגורה, בחרו "חזרה סגורה".';
+  const note=$('#uNote').value.trim();
+  ledger(`שימוש מקופסה ${useId}${k.to?' ('+k.to+')':''}: ${listText(used)}${note?' · '+note:''}.`,'out');
+  Object.entries(back).filter(([,q])=>q>0).forEach(([d,q])=>{ const b=document.querySelector(`#useRows [data-b="${d}"]`).value; const s=STOCK.find(x=>x.drug===d&&x.batch===b); s.qty+=q; ledger(`הוחזר מקופסה ${useId} למלאי החופשי: ${d} ${q} (אצווה ${b}).`,'in'); });
+  setStatus(k,'empty',`חזרה פתוחה: נוצל ${listText(used)}. השאר הוחזר למלאי, והקופסה ריקה${note?' · '+note:''}`);
+  $('#dUse').close(); render(); toast(`השימוש נרשם. קופסה ${useId} ריקה וממתינה למילוי`);
+});
+
+/* ---------- fill (one or many) ---------- */
+let fillIds=[];
+function openFill(ids){ fillIds=ids; const list=ids.map(id=>kits[id]); const need=needFor(list);
+  $('#dFillT').textContent=ids.length===1?`מילוי קופסה ${ids[0]}`:`מילוי ${ids.length} קופסאות`; $('#fErr').textContent='';
+  $('#fillRows').innerHTML=Object.entries(need).map(([d,q])=>{ const p=pickBatches(d,q); return `<tr><td>${d}</td><td class="n">${q}</td><td>${p.short?`<span style="color:var(--bad-ink);font-weight:600">חסר במלאי ${p.short}</span>`:p.out.map(x=>`${x.s.batch} (${x.q})`).join(', ')}</td></tr>`; }).join('');
+  $('#dFill').showModal(); }
+$('#fOk').addEventListener('click',()=>{
+  const list=fillIds.map(id=>kits[id]); const need=needFor(list);
+  const short=Object.entries(need).find(([d,q])=>stockOf(d)<q); if(short) return $('#fErr').textContent=`אין מספיק ${short[0]} במלאי החופשי (צריך ${short[1]}, יש ${stockOf(short[0])}). אפשר למלא פחות קופסאות.`;
+  Object.entries(need).forEach(([d,q])=>pickBatches(d,q).out.forEach(x=>{ x.s.qty-=x.q; ledger(`הועבר ממלאי חופשי ל${list.length===1?'קופסה '+list[0].id:list.length+' קופסאות'}: ${d} ${x.q} (אצווה ${x.s.batch}).`); }));
+  list.forEach(k=>setStatus(k,'vault','מולאה מהמלאי החופשי וחזרה לכספת'));
+  $('#dFill').close(); sel.clear(); render(); toast(list.length===1?`קופסה ${list[0].id} מולאה וחזרה לכספת`:`${list.length} קופסאות מולאו וחזרו לכספת`);
+});
+$('#bFillAll').addEventListener('click',()=>{ const ids=sortKits(Object.values(kits).filter(k=>k.status==='empty')).map(k=>k.id); if(!ids.length) return toast('אין קופסאות ריקות.'); openFill(ids); });
+
+/* ---------- count ---------- */
+$('#bCount').addEventListener('click',()=>{ const v=sortKits(Object.values(kits).filter(k=>k.status==='vault'));
+  $('#cList').innerHTML=v.map(k=>`<label><input type="checkbox" data-c="${k.id}"> ${k.id}</label>`).join(''); $('#cRes').textContent=`${v.length} קופסאות אמורות להיות בכספת.`; $('#dCount').showModal(); });
+$('#cAll').addEventListener('click',()=>document.querySelectorAll('#cList [data-c]').forEach(i=>i.checked=true));
+$('#cNone').addEventListener('click',()=>document.querySelectorAll('#cList [data-c]').forEach(i=>i.checked=false));
+$('#cOk').addEventListener('click',()=>{ const all=[...document.querySelectorAll('#cList [data-c]')]; const miss=all.filter(i=>!i.checked).map(i=>i.dataset.c);
+  ledger(miss.length?`ספירת קופסאות: נמצאו ${all.length-miss.length} מתוך ${all.length}. חסרות: ${miss.join(', ')}.`:`ספירת קופסאות: כל ${all.length} הקופסאות נמצאו בכספת.`, miss.length?'out':'in');
+  $('#dCount').close(); render(); toast(miss.length?`חסרות ${miss.length} קופסאות. הפרטים ברישומים`:'כל הקופסאות נמצאו'); });
+
+/* ---------- add ---------- */
+function addPreview(){ const s=$('#aSer').value.trim().toUpperCase(), a=+$('#aFrom').value, b=+$('#aTo').value, st=$('#aState').value; const t=TPL[s]||TPL.SA; const n=b-a+1;
+  $('#aPreview').textContent=(s&&a&&b&&b>=a)?`ייווספו ${n} קופסאות: ${s}${a} עד ${s}${b}. `+({empty:'הן יתחילו ריקות.',built:'הן יירשמו כמלאות בכספת, בלי להוריד מהמלאי.',fill:'יירדו מהמלאי: '+Object.entries(t).map(([d,q])=>`${d} ${q*n}`).join(', ')+'.'})[st]:''; }
+['input','change'].forEach(ev=>$('#dAdd').addEventListener(ev,addPreview));
+$('#bAdd').addEventListener('click',()=>{ const sa=Object.values(kits).filter(k=>k.series==='SA').map(k=>k.n); $('#aSer').value='SA'; $('#aFrom').value=Math.max(0,...sa)+1; $('#aTo').value=Math.max(0,...sa)+5; $('#aState').value='empty'; $('#aErr').textContent=''; addPreview(); $('#dAdd').showModal(); });
+$('#aOk').addEventListener('click',()=>{
+  const s=$('#aSer').value.trim().toUpperCase(), a=+$('#aFrom').value, b=+$('#aTo').value, st=$('#aState').value, err=m=>$('#aErr').textContent=m;
+  if(!/^[A-Z]{1,6}$/.test(s)) return err('סדרה: אותיות באנגלית בלבד, למשל SA.');
+  if(!(a>=1&&b>=a)) return err('טווח מספרים לא תקין.');
+  if(b-a>499) return err('אפשר להוסיף עד 500 קופסאות בפעם אחת.');
+  const exist=[]; for(let i=a;i<=b;i++) if(kits[s+i]) exist.push(s+i); if(exist.length) return err('כבר קיימות: '+exist.slice(0,6).join(', ')+(exist.length>6?'...':''));
+  if(!TPL[s]) TPL[s]=Object.assign({},TPL.SA);
+  const n=b-a+1, t=TPL[s];
+  if(st==='fill'){ for(const [d,q] of Object.entries(t)){ if(stockOf(d)<q*n) return err(`אין מספיק ${d} במלאי החופשי (צריך ${q*n}, יש ${stockOf(d)}). אפשר להוסיף אותן ריקות.`); }
+    Object.entries(t).forEach(([d,q])=>pickBatches(d,q*n).out.forEach(x=>{ x.s.qty-=x.q; })); ledger(`נוספו ומולאו ${n} קופסאות ${s}${a}–${s}${b} מהמלאי החופשי: ${Object.entries(t).map(([d,q])=>`${d} ${q*n}`).join(', ')}.`); }
+  else ledger(st==='built'?`נרשמו ${n} קופסאות קיימות ${s}${a}–${s}${b} כמלאות בכספת (בלי הורדה מהמלאי).`:`נוספו ${n} קופסאות ריקות ${s}${a}–${s}${b}.`);
+  for(let i=a;i<=b;i++) addKit(s,i,st==='empty'?'empty':'vault',{empty:'נוספה ריקה',built:'נרשמה במערכת: מלאה בכספת',fill:'נוספה ומולאה מהמלאי החופשי'}[st],now());
+  $('#dAdd').close(); render(); toast(`נוספו ${n} קופסאות`);
+});
+
+/* ---------- template ---------- */
+function tplRows(){ const t=TPL[$('#tSer').value]||TPL.SA; $('#tRows').innerHTML=DRUGS.map(d=>`<div class="tpl-row"><label for="t-${d}">${d}</label><input id="t-${d}" data-t="${d}" type="number" min="0" value="${t[d]||0}" inputmode="numeric"></div>`).join(''); }
+$('#bTpl').addEventListener('click',()=>{ $('#tSer').innerHTML=Object.keys(TPL).map(s=>`<option>${s}</option>`).join(''); tplRows(); $('#dTpl').showModal(); });
+$('#tSer').addEventListener('change',tplRows);
+$('#tOk').addEventListener('click',()=>{ const s=$('#tSer').value, t={}; document.querySelectorAll('#tRows [data-t]').forEach(i=>{ const q=parseInt(i.value,10)||0; if(q>0) t[i.dataset.t]=q; }); TPL[s]=t; ledger(`תבנית ${s} עודכנה: ${listText(t)}.`); $('#dTpl').close(); render(); toast(`תבנית ${s} נשמרה`); });
+
+render();
+</script>
+</body>
+</html>

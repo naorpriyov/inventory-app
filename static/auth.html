@@ -5,29 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>כניסה | ניהול מלאי</title>
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#146C66">
+<meta name="theme-color" content="#2563EB">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ניהול מלאי">
 <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="/static/icons/icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#F2F5F4;--surface:#FFFFFF;--ink:#10292E;--muted:#4A6066;--line:#D0DBD8;--accent:#146C66;--accent-ink:#fff;--bad:#8A1212;--focus:#0B5CD5;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#0D191B;--surface:#14252A;--ink:#E5EFEE;--muted:#A5B9B7;--line:#2A4045;--accent:#4DB8AD;--accent-ink:#04211F;--bad:#FFB8B8;--focus:#7FB2FF;color-scheme:dark}}
+:root{--bg:#F5F7FB;--surface:#FFFFFF;--ink:#0F172A;--muted:#475569;--line:#E2E8F0;--accent:#2563EB;--accent-ink:#fff;--accent-soft:#DBEAFE;--bad:#9F1239;--focus:#1D4ED8;--ease-out:cubic-bezier(0.23,1,0.32,1);color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0B1220;--surface:#121B2D;--ink:#E2E8F0;--muted:#94A3B8;--line:#22304A;--accent:#60A5FA;--accent-ink:#0B1220;--accent-soft:#1B2F52;--bad:#FECDD3;--focus:#93C5FD;color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Hebrew","Segoe UI",Arial,sans-serif;line-height:1.55;display:grid;place-items:center;padding:calc(1.25rem + env(safe-area-inset-top,0px)) 1.25rem calc(1.25rem + env(safe-area-inset-bottom,0px))}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Rubik","Segoe UI",Arial,sans-serif;line-height:1.55;display:grid;place-items:center;padding:calc(1.25rem + env(safe-area-inset-top,0px)) 1.25rem calc(1.25rem + env(safe-area-inset-bottom,0px))}
 main{width:100%;max-width:420px}
-.mark{width:3.2rem;height:3.2rem;border-radius:.8rem;background:var(--accent);display:grid;place-items:center;font-size:1.6rem;margin-bottom:1rem}
-h1{font-size:1.9rem;line-height:1.2;margin:0 0 .3rem}
+.mark{width:3.2rem;height:3.2rem;border-radius:1rem;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;margin-bottom:1rem}
+.mark svg{width:1.6rem;height:1.6rem}
+h1{font-size:1.9rem;line-height:1.2;margin:0 0 .3rem;letter-spacing:-.01em}
 .sub{color:var(--muted);margin:0 0 1.5rem}
-form{display:grid;gap:1rem;background:var(--surface);border:1px solid var(--line);border-radius:1rem;padding:1.4rem}
+form{display:grid;gap:1rem;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:1.4rem;box-shadow:0 1px 3px rgba(15,23,42,.06),0 8px 24px rgba(15,23,42,.06)}
 label{font-weight:600;display:block;margin-bottom:.3rem}
-input{width:100%;font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:.6rem;padding:.65rem .75rem;min-height:48px}
-input:focus{border-color:var(--accent);outline:none}
+input{width:100%;font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:.65rem .75rem;min-height:48px;transition:border-color 150ms ease,box-shadow 150ms ease}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);outline:none}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 .hint{font-size:.85rem;color:var(--muted);margin-top:.25rem}
-button{font:inherit;font-weight:700;min-height:52px;border:0;border-radius:.65rem;background:var(--accent);color:var(--accent-ink);cursor:pointer;font-size:1.05rem}
+button{font:inherit;font-weight:600;min-height:52px;border:0;border-radius:12px;background:var(--accent);color:var(--accent-ink);cursor:pointer;font-size:1.05rem;transition:transform 160ms var(--ease-out),filter 150ms ease}
+button:active:not(:disabled){transform:scale(.97)}
+@media (hover:hover) and (pointer:fine){button:hover:not(:disabled){filter:brightness(1.08)}}
+@media (prefers-reduced-motion:reduce){button,input{transition:none}}
 button:disabled{opacity:.6}
 .err{color:var(--bad);font-weight:600;min-height:1.2em;margin:0}
 .alt{text-align:center;margin-top:1.1rem}
@@ -36,14 +40,14 @@ button:disabled{opacity:.6}
 </head>
 <body>
 <main>
-  <div class="mark" aria-hidden="true">📦</div>
+  <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg></div>
   <h1 id="title">כניסה</h1>
   <p class="sub" id="sub"></p>
   <form id="f" novalidate>
     <div id="fInvite"><label for="invite">קוד הרשמה</label><input id="invite" autocomplete="off" dir="ltr" autocapitalize="characters"><div class="hint">את הקוד מקבלים ממנהל המערכת.</div></div>
     <div id="fName"><label for="name">שם מלא</label><input id="name" autocomplete="name"></div>
-    <div><label for="username">שם משתמש</label><input id="username" autocomplete="username" dir="ltr" autocapitalize="none" spellcheck="false"><div class="hint" id="userHint">באנגלית, ספרות, נקודה או מקף.</div></div>
-    <div><label for="password">סיסמה</label><input id="password" type="password" dir="ltr"><div class="hint" id="pwHint">לפחות 8 תווים.</div></div>
+    <div><label for="username">שם משתמש</label><input id="username" autocomplete="username" dir="auto" autocapitalize="none" spellcheck="false"><div class="hint" id="userHint">בעברית או באנגלית, אפשר גם ספרות, נקודה או מקף. בלי רווחים.</div></div>
+    <div><label for="password">סיסמה</label><input id="password" type="password" dir="ltr"><div class="hint" id="pwHint">לפחות 7 תווים.</div></div>
     <p class="err" id="err" role="alert"></p>
     <button type="submit" id="go">כניסה</button>
   </form>
@@ -55,7 +59,7 @@ button:disabled{opacity:.6}
   const $=id=>document.getElementById(id);
   const T={
     login:{title:'כניסה',sub:'ניהול מלאי וספר סמים',btn:'כניסה',alt:'עובד חדש? <a href="/register">הרשמה</a>',fields:[]},
-    register:{title:'הרשמה',sub:'אחרי ההרשמה תוכלו להחתים, ולבקש מהמנהל הרשאות נוספות.',btn:'הרשמה',alt:'כבר רשומים? <a href="/login">כניסה</a>',fields:['fInvite','fName']},
+    register:{title:'הרשמה',sub:'אחרי ההרשמה הבקשה שלך תגיע למנהל, והוא יקבע לאילו מסכים תהיה לך גישה.',btn:'הרשמה',alt:'כבר רשומים? <a href="/login">כניסה</a>',fields:['fInvite']},
     setup:{title:'הגדרה ראשונה',sub:'יצירת חשבון מנהל המערכת. החשבון הזה יוכל לנהל את כל המשתמשים וההרשאות.',btn:'יצירת חשבון מנהל',alt:'',fields:['fName']}
   }[mode]||null;
   const t=T||{title:'כניסה',btn:'כניסה',fields:[]};

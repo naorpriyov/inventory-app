@@ -3,3 +3,9 @@ data/*
 !data/.keep
 __pycache__/
 *.pyc
+backups/
+logs/
+
+# קבצים שנוצרים אוטומטית
+כתובת האתר.txt
+כתובת האתר.url

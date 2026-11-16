@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ניהול מלאי</title>
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#146C66">
+<meta name="theme-color" content="#2563EB">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ניהול מלאי">
@@ -15,15 +15,19 @@
 <script src="/static/shim.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#F2F5F4; --surface:#FFFFFF; --sunk:#E8EEEC; --ink:#10292E; --muted:#4A6066; --line:#D0DBD8;
-  --accent:#146C66; --accent-ink:#FFFFFF; --accent-soft:#DCEFEC;
-  --warn-bg:#FFF0B3; --warn-ink:#5A4300; --warn-edge:#D9A900;
-  --bad-bg:#FBDEDE; --bad-ink:#8A1212; --bad-edge:#C62828;
-  --ok-ink:#1D6A39; --ok-bg:#DDF1E3;
-  --focus:#0B5CD5;
+  /* "כחול רענן" – fresh blue, bento tiles */
+  --bg:#F5F7FB; --surface:#FFFFFF; --sunk:#EDF1F7; --ink:#0F172A; --muted:#475569; --line:#E2E8F0;
+  --accent:#2563EB; --accent-ink:#FFFFFF; --accent-soft:#DBEAFE;
+  --warn-bg:#FEF9C3; --warn-ink:#713F12; --warn-edge:#EAB308;
+  --bad-bg:#FFE4E6; --bad-ink:#9F1239; --bad-edge:#E11D48;
+  --ok-ink:#047857; --ok-bg:#D1FAE5;
+  --focus:#1D4ED8;
+  --k1:#2563EB; --k1i:#FFFFFF; --k2:#D1FAE5; --k2i:#047857; --k3:#FEF9C3; --k3i:#854D0E; --k4:#FFE4E6; --k4i:#BE123C; --k5:#EDE9FE; --k5i:#6D28D9;
+  --r:20px; --r-sm:12px; --shadow:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
   color-scheme:light;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
@@ -32,27 +36,29 @@
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#0D191B; --surface:#14252A; --sunk:#0F1F23; --ink:#E5EFEE; --muted:#A5B9B7; --line:#2A4045;
-    --accent:#4DB8AD; --accent-ink:#04211F; --accent-soft:#163A38;
-    --warn-bg:#463800; --warn-ink:#FFE38A; --warn-edge:#E3B300;
-    --bad-bg:#4A1515; --bad-ink:#FFB8B8; --bad-edge:#FF6B6B;
-    --ok-ink:#8FE0A9; --ok-bg:#163A25; --focus:#7FB2FF;
+    --bg:#0B1220; --surface:#121B2D; --sunk:#0E1626; --ink:#E2E8F0; --muted:#94A3B8; --line:#22304A;
+    --accent:#60A5FA; --accent-ink:#0B1220; --accent-soft:#1B2F52;
+    --warn-bg:#3A2E05; --warn-ink:#FDE68A; --warn-edge:#EAB308;
+    --bad-bg:#3F1219; --bad-ink:#FECDD3; --bad-edge:#F43F5E;
+    --ok-ink:#86EFAC; --ok-bg:#0F3A2E; --focus:#93C5FD;
+    --k1:#1D4ED8; --k1i:#FFFFFF; --k2:#0F3A2E; --k2i:#6EE7B7; --k3:#3A2E05; --k3i:#FDE68A; --k4:#3F1219; --k4i:#FDA4AF; --k5:#2A1E4A; --k5i:#C4B5FD; --shadow:none;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0D191B; --surface:#14252A; --sunk:#0F1F23; --ink:#E5EFEE; --muted:#A5B9B7; --line:#2A4045;
-  --accent:#4DB8AD; --accent-ink:#04211F; --accent-soft:#163A38;
-  --warn-bg:#463800; --warn-ink:#FFE38A; --warn-edge:#E3B300;
-  --bad-bg:#4A1515; --bad-ink:#FFB8B8; --bad-edge:#FF6B6B;
-  --ok-ink:#8FE0A9; --ok-bg:#163A25; --focus:#7FB2FF;
+  --bg:#0B1220; --surface:#121B2D; --sunk:#0E1626; --ink:#E2E8F0; --muted:#94A3B8; --line:#22304A;
+  --accent:#60A5FA; --accent-ink:#0B1220; --accent-soft:#1B2F52;
+  --warn-bg:#3A2E05; --warn-ink:#FDE68A; --warn-edge:#EAB308;
+  --bad-bg:#3F1219; --bad-ink:#FECDD3; --bad-edge:#F43F5E;
+  --ok-ink:#86EFAC; --ok-bg:#0F3A2E; --focus:#93C5FD;
+    --k1:#1D4ED8; --k1i:#FFFFFF; --k2:#0F3A2E; --k2i:#6EE7B7; --k3:#3A2E05; --k3i:#FDE68A; --k4:#3F1219; --k4i:#FDA4AF; --k5:#2A1E4A; --k5i:#C4B5FD; --shadow:none;
   color-scheme:dark;
 }
 :root.fs-1{font-size:112.5%} :root.fs-2{font-size:125%}
 *,*::before,*::after{box-sizing:inherit}
 [hidden]{display:none!important}
 html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 7rem)}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Hebrew","Segoe UI",Arial,sans-serif;line-height:1.55;font-size:1rem}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Rubik","Segoe UI",Arial,sans-serif;line-height:1.55;font-size:1rem}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
 a{color:var(--accent)}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
@@ -64,56 +70,89 @@ a{color:var(--accent)}
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
 .top-in{max-width:1180px;margin:0 auto;padding:.7rem 1.25rem;display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1.5rem}
 .brand{display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:1.15rem;margin-inline-end:auto}
-.brand-mark{width:2rem;height:2rem;border-radius:.5rem;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:1rem}
-nav.tabs{display:flex;gap:.25rem;order:3;width:100%;overflow-x:auto}
+.brand-mark{width:2.1rem;height:2.1rem;border-radius:.65rem;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+.brand-mark svg{width:1.15rem;height:1.15rem}
+nav.tabs{display:flex;gap:.2rem;order:3;width:100%;overflow-x:auto;background:var(--sunk);padding:.25rem;border-radius:.9rem}
 @media (min-width:760px){nav.tabs{order:0;width:auto}}
-nav.tabs a{display:flex;align-items:center;gap:.45rem;padding:.55rem .95rem;border-radius:.6rem;text-decoration:none;color:var(--muted);font-weight:600;white-space:nowrap;min-height:44px}
-nav.tabs a:hover{background:var(--sunk);color:var(--ink)}
-nav.tabs a[aria-current="page"]{background:var(--accent-soft);color:var(--ink);box-shadow:inset 0 -3px 0 var(--accent)}
+nav.tabs a{display:flex;align-items:center;gap:.45rem;padding:.5rem .95rem;border-radius:.7rem;text-decoration:none;color:var(--muted);font-weight:500;white-space:nowrap;min-height:42px;transition:color 150ms ease,background-color 150ms ease}
+@media (hover:hover) and (pointer:fine){nav.tabs a:not([aria-current]):hover{color:var(--ink)}}
+nav.tabs a[aria-current="page"]{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(15,23,42,.12)}
 .badge-n{min-width:1.45rem;height:1.45rem;padding:0 .35rem;border-radius:999px;background:var(--bad-edge);color:#fff;font-size:.8rem;display:inline-grid;place-items:center;font-weight:700}
 .fs{display:flex;align-items:center;gap:.25rem;color:var(--muted);font-size:.9rem}
-.fs button{min-width:44px;min-height:40px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:.5rem;font:inherit;font-weight:700;cursor:pointer}
-.fs button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.fs button{min-width:44px;min-height:40px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r-sm);font:inherit;font-weight:600;cursor:pointer;transition:transform 160ms var(--ease-out)}
+.fs button:active{transform:scale(.97)}
+.fs button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+/* phone: account and text size live behind a menu button; tabs scroll with edge fades */
+.menu-btn{display:none;align-items:center;gap:.4rem;min-height:44px;padding:0 .9rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r-sm);font:inherit;font-weight:600;cursor:pointer;transition:transform 160ms var(--ease-out)}
+.menu-btn:active{transform:scale(.97)}
+.menu-btn[aria-expanded="true"]{background:var(--sunk)}
+.btn.filt-btn{display:none}
+@media (max-width:759px){
+  .top-in{padding:.5rem 1rem;gap:.5rem}
+  .menu-btn{display:inline-flex}
+  header.top:not(.menu-open) .fs, header.top:not(.menu-open) .acct{display:none}
+  header.top.menu-open .fs, header.top.menu-open .acct{order:4;width:100%;padding:.25rem 0}
+  header.top.menu-open .acct{order:5;padding-bottom:.5rem}
+  nav.tabs{scrollbar-width:none;scroll-behavior:smooth}
+  nav.tabs::-webkit-scrollbar{display:none}
+  nav.tabs.more-end{-webkit-mask-image:linear-gradient(to right,transparent,#000 2.5rem);mask-image:linear-gradient(to right,transparent,#000 2.5rem)}
+  nav.tabs.more-start{-webkit-mask-image:linear-gradient(to left,transparent,#000 2.5rem);mask-image:linear-gradient(to left,transparent,#000 2.5rem)}
+  nav.tabs.more-start.more-end{-webkit-mask-image:linear-gradient(to right,transparent,#000 2.5rem,#000 calc(100% - 2.5rem),transparent);mask-image:linear-gradient(to right,transparent,#000 2.5rem,#000 calc(100% - 2.5rem),transparent)}
+  main{padding-top:1rem}
+  .toolbar{padding:.75rem;gap:.6rem}
+  .btn.filt-btn{display:inline-flex;justify-self:start}
+  .toolbar:not(.open) .adv{display:none}
+}
 
 main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 4rem}
-h1{font-size:1.75rem;line-height:1.25;margin:0 0 .25rem}
+h1{font-size:1.85rem;line-height:1.2;margin:0 0 .25rem;font-weight:700;letter-spacing:-.01em}
 h2{font-size:1.25rem;margin:0}
 .sub{color:var(--muted);margin:0}
 .page-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:1rem;justify-content:space-between;margin-bottom:1.25rem}
 
 /* buttons & inputs */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-height:44px;padding:.5rem 1rem;border-radius:.6rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
-.btn:hover{background:var(--sunk)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-height:44px;padding:.5rem 1rem;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap;transition:transform 160ms var(--ease-out),background-color 150ms ease,filter 150ms ease}
+.btn:active:not(:disabled){transform:scale(.97)}
+@media (hover:hover) and (pointer:fine){.btn:hover{background:var(--sunk)}}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.btn.primary:hover{filter:brightness(1.07)}
+@media (hover:hover) and (pointer:fine){.btn.primary:hover{background:var(--accent);filter:brightness(1.08)}}
 .btn.danger{color:var(--bad-ink);border-color:var(--bad-edge)}
 .btn.sm{min-height:38px;padding:.3rem .65rem;font-size:.92rem}
 .btn.in{color:var(--ok-ink)} .btn.out{color:var(--bad-ink)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 label{font-weight:600;font-size:.95rem}
-input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:.55rem;padding:.55rem .7rem;min-height:44px;width:100%}
-input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r-sm);padding:.55rem .75rem;min-height:44px;width:100%;transition:border-color 150ms ease,box-shadow 150ms ease}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 input[readonly]{background:var(--sunk);font-weight:700}
 .field{display:flex;flex-direction:column;gap:.3rem}
 .hint{font-size:.85rem;color:var(--muted);font-weight:400}
 .err{color:var(--bad-ink);font-size:.9rem;min-height:1.2em}
 
 /* dashboard */
-.hero{display:grid;grid-template-columns:auto 1fr;gap:1.25rem;align-items:center;padding:1.5rem 1.5rem 1.4rem;background:var(--surface);border:1px solid var(--line);border-inline-start:8px solid var(--ok-ink);border-radius:.9rem;margin-bottom:1.25rem}
+.hero{display:grid;grid-template-columns:auto 1fr;gap:1.25rem;align-items:center;padding:1.5rem 1.5rem 1.4rem;background:var(--surface);border:1px solid var(--line);border-inline-start:6px solid var(--ok-ink);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:1.25rem}
 .hero.soon{border-inline-start-color:var(--warn-edge);background:linear-gradient(var(--warn-bg),var(--warn-bg)) padding-box}
 .hero.bad{border-inline-start-color:var(--bad-edge);background:var(--bad-bg)}
 .hero .big{font-size:clamp(2.6rem,7vw,4rem);font-weight:700;line-height:1}
 .hero .msg{font-size:1.3rem;font-weight:700;margin:0}
 .hero .detail{margin:.25rem 0 .6rem;color:inherit}
 .hero .actions{display:flex;gap:.5rem;flex-wrap:wrap}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border:1px solid var(--line);border-radius:.9rem;background:var(--surface);margin-bottom:1.5rem;overflow:hidden}
-.stat{padding:1rem 1.2rem;border-inline-start:1px solid var(--line)}
-.stat:first-child{border-inline-start:0}
-.stat b{display:block;font-size:1.8rem;line-height:1.2}
-.stat span{color:var(--muted);font-size:.92rem}
+.stats{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:.85rem;margin-bottom:1.5rem}
+.stat{border-radius:var(--r);padding:1rem 1.1rem;display:grid;gap:.45rem;align-content:start;background:var(--surface)}
+.stat .ic{width:2.25rem;height:2.25rem;border-radius:.7rem;display:grid;place-items:center;background:rgba(255,255,255,.65)}
+.stat .ic svg{width:1.15rem;height:1.15rem}
+.stat b{display:block;font-size:1.9rem;line-height:1;font-variant-numeric:tabular-nums;font-weight:700}
+.stat span{font-size:.92rem;font-weight:500}
+.stat:nth-child(1){grid-row:span 2;background:var(--k1);color:var(--k1i);align-content:space-between}
+.stat:nth-child(1) .ic{background:rgba(255,255,255,.18)} .stat:nth-child(1) b{font-size:clamp(2.6rem,6vw,3.4rem)} .stat:nth-child(1) span{opacity:.92}
+.stat:nth-child(2){background:var(--k2);color:var(--k2i)} .stat:nth-child(3){background:var(--k3);color:var(--k3i)}
+.stat:nth-child(4){background:var(--k4);color:var(--k4i)} .stat:nth-child(5){background:var(--k5);color:var(--k5i)}
+.stat:not(:first-child) span{color:var(--ink)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .stat:not(:first-child) .ic{background:rgba(255,255,255,.08)}}
+:root[data-theme="dark"] .stat:not(:first-child) .ic{background:rgba(255,255,255,.08)}
+@media (max-width:640px){.stats{grid-template-columns:1fr 1fr;gap:.65rem}.stat:nth-child(1){grid-row:auto;grid-column:span 2;display:flex;align-items:center;gap:.8rem}.stat:nth-child(1) span{margin-inline-start:auto}.stat b{font-size:1.6rem}}
 .grid2{display:grid;grid-template-columns:1fr;gap:1.25rem}
 @media (min-width:900px){.grid2{grid-template-columns:1.25fr 1fr}}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:.9rem;padding:1.1rem 1.2rem}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1.1rem 1.2rem;box-shadow:var(--shadow)}
 .panel h2{margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
 .list{list-style:none;margin:0;padding:0}
 .list li{display:flex;gap:.75rem;align-items:center;justify-content:space-between;padding:.65rem .5rem;border-top:1px solid var(--line)}
@@ -121,7 +160,7 @@ input[readonly]{background:var(--sunk);font-weight:700}
 .list .what{min-width:0}
 .list .what strong{display:block}
 .list .what small{color:var(--muted)}
-.list li.soon{background:var(--warn-bg);border-radius:.5rem} .list li.expired{background:var(--bad-bg);border-radius:.5rem}
+.list li.soon{background:var(--warn-bg);border-radius:var(--r-sm)} .list li.expired{background:var(--bad-bg);border-radius:var(--r-sm)}
 .empty{color:var(--muted);padding:.75rem .25rem;margin:0}
 .loc-sum td:first-child{font-weight:600}
 .matrix th,.matrix td{text-align:center}
@@ -133,19 +172,19 @@ input[readonly]{background:var(--sunk);font-weight:700}
 .in-kit{display:block;font-size:.78rem;font-weight:500;color:var(--muted)}
 
 /* status pill */
-.pill{display:inline-flex;align-items:center;gap:.3rem;padding:.15rem .6rem;border-radius:999px;font-size:.85rem;font-weight:700;white-space:nowrap;border:1.5px solid transparent}
+.pill{display:inline-flex;align-items:center;gap:.3rem;padding:.18rem .65rem;border-radius:999px;font-size:.84rem;font-weight:600;white-space:nowrap;border:1.5px solid transparent}
 .pill.ok{background:var(--ok-bg);color:var(--ok-ink)}
 .pill.soon{background:var(--warn-bg);color:var(--warn-ink);border-color:var(--warn-edge)}
 .pill.expired{background:var(--bad-edge);color:#fff}
 .pill.sealed{background:var(--sunk);color:var(--ink);border-color:var(--line)}
 
 /* toolbar + table */
-.toolbar{display:grid;grid-template-columns:1fr;gap:.75rem;background:var(--surface);border:1px solid var(--line);border-radius:.9rem;padding:1rem;margin-bottom:1rem}
+.toolbar{display:grid;grid-template-columns:1fr;gap:.75rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem;margin-bottom:1rem;box-shadow:var(--shadow)}
 @media (min-width:760px){.toolbar{grid-template-columns:2fr 1fr 1fr 1fr}}
-.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:.9rem}
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
 table{width:100%;border-collapse:collapse;font-size:.97rem}
 th,td{padding:.7rem .75rem;text-align:start;border-bottom:1px solid var(--line);vertical-align:middle}
-th{background:var(--sunk);font-size:.88rem;color:var(--muted);font-weight:600;white-space:nowrap}
+th{background:var(--sunk);font-size:.86rem;color:var(--muted);font-weight:500;white-space:nowrap}
 tbody tr:last-child td{border-bottom:0}
 td.num{font-variant-numeric:tabular-nums;font-weight:700;font-size:1.05rem}
 td.code{font-variant-numeric:tabular-nums;direction:ltr;text-align:end;unicode-bidi:isolate}
@@ -159,15 +198,15 @@ tr.expired td:first-child{box-shadow:inset -6px 0 0 var(--bad-edge)}
 
 /* locations */
 .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.25rem}
-.chips a{padding:.45rem .9rem;border-radius:999px;border:1px solid var(--line);background:var(--surface);text-decoration:none;color:var(--ink);font-weight:600;min-height:40px;display:inline-flex;align-items:center;gap:.4rem}
-.loc{background:var(--surface);border:1px solid var(--line);border-radius:.9rem;margin-bottom:1.5rem;overflow:hidden}
+.chips a{padding:.45rem .95rem;border-radius:999px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);text-decoration:none;color:var(--ink);font-weight:600;min-height:40px;display:inline-flex;align-items:center;gap:.4rem}
+.loc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:1.5rem;overflow:hidden;box-shadow:var(--shadow)}
 .loc-head{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;justify-content:space-between;padding:1rem 1.2rem;border-bottom:1px solid var(--line);background:var(--sunk)}
 .loc-head h2{font-size:1.35rem}
 .loc-body{padding:1rem 1.2rem;display:grid;gap:1rem}
 .loc-body h3{margin:0;font-size:1.05rem}
-.loc .tbl-wrap{border-radius:.6rem}
+.loc .tbl-wrap{border-radius:var(--r-sm);box-shadow:none}
 .kits{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
-.kit{border:2px dashed var(--line);border-radius:.8rem;padding:1rem;background:var(--surface);display:flex;flex-direction:column;gap:.6rem}
+.kit{border:2px dashed var(--line);border-radius:var(--r-sm);padding:1rem;background:var(--surface);display:flex;flex-direction:column;gap:.6rem}
 .kit.soon{border-color:var(--warn-edge);background:var(--warn-bg);color:var(--warn-ink)}
 .kit.expired{border-color:var(--bad-edge);background:var(--bad-bg);color:var(--bad-ink)}
 .kit-top{display:flex;justify-content:space-between;gap:.5rem;align-items:flex-start}
@@ -179,25 +218,85 @@ tr.expired td:first-child{box-shadow:inset -6px 0 0 var(--bad-edge)}
 .lock-note{font-size:.88rem;font-weight:600}
 
 /* dialogs */
-dialog{border:0;border-radius:1rem;padding:0;max-width:min(640px,94vw);width:100%;background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
-dialog::backdrop{background:rgba(8,20,22,.55)}
+dialog{border:0;border-radius:var(--r);padding:0;max-width:min(640px,94vw);width:100%;background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(15,23,42,.5)}
 dialog form{padding:1.4rem;display:grid;gap:.9rem;max-height:86vh;overflow-y:auto}
 dialog h2{font-size:1.3rem}
 .dlg-actions{display:flex;gap:.6rem;justify-content:flex-start;flex-wrap:wrap;padding-top:.4rem}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 .exp-pick{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
-fieldset{border:1px solid var(--line);border-radius:.7rem;padding:.8rem;margin:0;display:grid;gap:.6rem}
+fieldset{border:1px solid var(--line);border-radius:var(--r-sm);padding:.8rem;margin:0;display:grid;gap:.6rem}
 legend{font-weight:700;padding:0 .4rem}
 .kit-rows{display:grid;gap:.75rem}
 .kit-row{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
 .kit-row .wide{grid-column:1/-1}
-.cur{background:var(--sunk);border-radius:.6rem;padding:.7rem .9rem}
+.cur{background:var(--sunk);border-radius:var(--r-sm);padding:.7rem .9rem}
 
-.toast{position:fixed;bottom:calc(1rem + env(safe-area-inset-bottom,0px));inset-inline-start:50%;transform:translateX(50%);background:var(--ink);color:var(--surface);padding:.75rem 1.2rem;border-radius:.7rem;font-weight:600;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
+.toast{position:fixed;bottom:calc(1rem + env(safe-area-inset-bottom,0px));inset-inline-start:50%;transform:translateX(50%);background:var(--ink);color:var(--surface);padding:.75rem 1.2rem;border-radius:var(--r-sm);font-weight:600;z-index:60;opacity:0;pointer-events:none;transition:opacity 200ms ease;max-width:90vw;box-shadow:0 8px 24px rgba(15,23,42,.18)}
 .toast.show{opacity:1}
-.notice{background:var(--sunk);border:1px solid var(--line);border-radius:.7rem;padding:.7rem 1rem;margin-bottom:1rem;font-size:.92rem}
+.notice{background:var(--sunk);border:1px solid var(--line);border-radius:var(--r-sm);padding:.7rem 1rem;margin-bottom:1rem;font-size:.92rem}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media (max-width:560px){.two{grid-template-columns:1fr}.hero{grid-template-columns:1fr}}
+
+/* drug kits (numbered boxes) */
+.bx-stats{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:.85rem;margin-bottom:1.1rem}
+.bx-stat{border-radius:var(--r);padding:1rem 1.1rem;display:grid;gap:.4rem;align-content:start;border:0;font:inherit;text-align:start;cursor:pointer;transition:transform 160ms var(--ease-out)}
+.bx-stat:active{transform:scale(.98)}
+.bx-stat b{font-size:1.9rem;line-height:1;font-variant-numeric:tabular-nums}
+.bx-stat span{font-weight:500}
+.bx-stat .ic{width:2.2rem;height:2.2rem;border-radius:.7rem;display:grid;place-items:center;background:rgba(255,255,255,.6)}
+.bx-stat .ic svg{width:1.15rem;height:1.15rem}
+.bx-stat.s-vault{grid-row:span 2;background:var(--k1);color:var(--k1i);align-content:space-between}
+.bx-stat.s-vault .ic{background:rgba(255,255,255,.18)} .bx-stat.s-vault b{font-size:clamp(2.6rem,6vw,3.4rem)}
+.bx-stat.s-signed{background:var(--k3);color:var(--k3i)} .bx-stat.s-empty{background:var(--sunk);color:var(--muted)} .bx-stat.s-all{background:var(--k5);color:var(--k5i)} .bx-stat.s-units{background:var(--k2);color:var(--k2i)}
+.bx-stat[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:2px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bx-stat:not(.s-vault) .ic{background:rgba(255,255,255,.08)}}
+:root[data-theme="dark"] .bx-stat:not(.s-vault) .ic{background:rgba(255,255,255,.08)}
+@media (max-width:640px){.bx-stats{grid-template-columns:1fr 1fr;gap:.6rem}.bx-stat.s-vault{grid-row:auto;grid-column:span 2;display:flex;align-items:center;gap:.8rem}.bx-stat.s-vault span:last-child{margin-inline-start:auto}.bx-stat b{font-size:1.6rem}}
+.notice.warn{background:var(--warn-bg);color:var(--warn-ink);border-color:color-mix(in srgb,var(--warn-edge) 40%,transparent)}
+.notice.bad{background:var(--bad-bg);color:var(--bad-ink);border-color:color-mix(in srgb,var(--bad-edge) 35%,transparent)}
+#bxAlerts .notice{display:flex;align-items:center;gap:.75rem}
+#bxAlerts .notice span{flex:1}
+.bx-seg{display:flex;flex-wrap:wrap;gap:.2rem;background:var(--sunk);padding:.25rem;border-radius:.9rem;margin:.8rem 0}
+.bx-seg button{font:inherit;font-weight:500;border:0;background:transparent;color:var(--muted);padding:.4rem .85rem;border-radius:.7rem;cursor:pointer;min-height:38px;transition:transform 160ms var(--ease-out)}
+.bx-seg button:active{transform:scale(.97)}
+.bx-seg button[aria-pressed="true"]{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.bx-seg .n{font-variant-numeric:tabular-nums;opacity:.75;margin-inline-start:.3rem}
+.bx-tools{display:grid;grid-template-columns:2fr 1fr 1fr;gap:.75rem;margin-bottom:.9rem}
+@media (max-width:640px){.bx-tools{grid-template-columns:1fr 1fr}.bx-tools .field:first-child{grid-column:1/-1}}
+.bx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem}
+.bx-box{position:relative;display:grid;gap:.2rem;text-align:start;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:.7rem .8rem;cursor:pointer;border-inline-start:5px solid var(--accent);transition:transform 160ms var(--ease-out),box-shadow 150ms ease}
+.bx-box:active{transform:scale(.97)}
+@media (hover:hover) and (pointer:fine){.bx-box:hover{box-shadow:0 4px 14px rgba(15,23,42,.08)}}
+.bx-box .num{font-weight:700;font-size:1.05rem;direction:ltr;text-align:end;font-variant-numeric:tabular-nums}
+.bx-box small{color:var(--muted);font-size:.8rem;line-height:1.35}
+.bx-box.signed{border-inline-start-color:var(--warn-edge)} .bx-box.empty{border-inline-start-color:var(--muted);background:var(--sunk)}
+.bx-box.exp-soon{box-shadow:inset 0 0 0 2px var(--warn-edge)} .bx-box.exp-expired{box-shadow:inset 0 0 0 2px var(--bad-edge)}
+.bx-box.sel{box-shadow:0 0 0 3px var(--accent)}
+.bx-box .tick{position:absolute;top:.5rem;inset-inline-end:.5rem;width:1.3rem;height:1.3rem;border-radius:.4rem;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:.8rem;color:transparent}
+.bx-box.sel .tick{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.bx-st{display:inline-flex;align-items:center;padding:.12rem .55rem;border-radius:999px;font-size:.78rem;font-weight:600;width:fit-content}
+.bx-st.vault{background:var(--accent-soft);color:var(--accent)} .bx-st.signed{background:var(--warn-bg);color:var(--warn-ink)} .bx-st.empty{background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+.bx-bar{position:fixed;bottom:calc(1rem + env(safe-area-inset-bottom,0px));inset-inline:0;margin:auto;width:min(820px,calc(100% - 2rem));background:var(--ink);color:var(--surface);border-radius:var(--r);padding:.7rem .9rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;z-index:20;box-shadow:0 12px 32px rgba(15,23,42,.3)}
+.bx-bar span{flex:1;font-weight:600;min-width:7rem}
+.bx-bar .bx-ghost{background:transparent;color:inherit;border-color:rgba(255,255,255,.35)}
+.bx-log{list-style:none;margin:.8rem 0 0;padding:0;display:grid;gap:.4rem;max-height:340px;overflow-y:auto}
+.bx-log li{padding:.5rem .7rem;background:var(--sunk);border-radius:var(--r-sm);font-size:.9rem;border-inline-start:4px solid var(--accent)}
+.bx-log li.box-use{border-inline-start-color:var(--bad-edge)} .bx-log li.box-return{border-inline-start-color:var(--ok-ink)}
+.bx-log li time{display:block;color:var(--muted);font-size:.78rem}
+.bx-comp{display:grid;gap:.35rem}
+.bx-comp>div{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.45rem .7rem;background:var(--sunk);border-radius:.6rem}
+.bx-tl{list-style:none;margin:0;padding:0;display:grid;gap:.35rem;max-height:220px;overflow-y:auto}
+.bx-tl li{font-size:.88rem;padding:.35rem .6rem;border-inline-start:3px solid var(--line)}
+.bx-tl li time{color:var(--muted);font-size:.78rem;display:block}
+.bx-use{display:grid;grid-template-columns:1fr 90px 1.3fr;gap:.5rem;align-items:center}
+.bx-use.hd{font-size:.8rem;color:var(--muted);font-weight:500}
+@media (max-width:560px){.bx-use{grid-template-columns:1fr 80px}.bx-use>:nth-child(3){grid-column:1/-1}}
+.bx-tpl{display:grid;grid-template-columns:1fr 110px;gap:.6rem;align-items:center}
+.bx-three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem}
+.bx-checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:.4rem}
+.bx-checks label{display:flex;align-items:center;gap:.4rem;padding:.35rem .5rem;background:var(--sunk);border-radius:.6rem;direction:ltr;justify-content:flex-end;font-weight:600}
+.bx-checks input{width:1.1rem;height:1.1rem;min-height:auto}
 </style>
 <style id="sg-css">
 :root{--sg-opioid:#3A9AD9;--sg-opioid-soft:#DDEEF9;--sg-benzo:#F07D1A;--sg-benzo-soft:#FDE8D5;--sg-induct:#E3C400;--sg-induct-soft:#FBF4C4}
@@ -239,6 +338,14 @@ legend{font-weight:700;padding:0 .4rem}
 input[type="checkbox"]{width:1.25rem;height:1.25rem;min-height:0;accent-color:var(--accent)}
 .chk{display:inline-flex;align-items:center;gap:.4rem;font-weight:500}
 .flags{display:flex;flex-wrap:wrap;gap:.4rem 1rem;font-size:.92rem;margin-top:.4rem}
+.flags-h{width:100%;font-weight:600;font-size:.85rem;color:var(--muted)}
+.tab-lvl{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.4rem .8rem;margin-top:.4rem;font-size:.92rem}
+.tab-lvl label{display:grid;gap:.15rem}
+.tab-lvl select{padding:.3rem .4rem}
+/* הרשאת צפייה בלבד במסך: מסתירים כל פעולה שמשנה נתונים */
+body.ro main [data-act]:not([data-act="inv-csv"]):not([data-act="show-alerts"]):not([data-act="perm"]):not([data-act="req-perm"]),
+body.ro main [data-recon-all],body.ro #cStart,body.ro #cFormWrap,body.ro .rx-tabs,body.ro #rxPanelNew{display:none!important}
+body.no-sign main [data-act="sign-item"],body.no-sign main [data-act="kit-sign"],body.no-sign main [data-act="dash-sign"]{display:none!important}
 .sig{display:block;width:100%;height:170px;background:#fff;border:2px dashed var(--line);border-radius:.6rem;touch-action:none;cursor:crosshair}
 .sig-img{display:block;height:36px;max-width:110px;background:#fff;border:1px solid var(--line);border-radius:4px}
 .paper-head{display:flex;flex-wrap:wrap;gap:.5rem 2.5rem;font-size:1.25rem;font-weight:700;margin:.2rem 0 1rem}
@@ -355,17 +462,19 @@ details.sg-month .sg-pills{margin-inline-start:auto}
 <a class="skip" href="#main">דילוג לתוכן</a>
 <header class="top">
   <div class="top-in">
-    <div class="brand"><span class="brand-mark" aria-hidden="true">📦</span><span>ניהול מלאי</span></div>
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg></span><span>ניהול מלאי</span></div>
+    <button type="button" class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="menuArea"><span aria-hidden="true">☰</span>תפריט</button>
     <nav class="tabs" aria-label="ניווט ראשי">
       <a href="#dashboard" data-route="dashboard">לוח בקרה</a>
       <a href="#inventory" data-route="inventory">מלאי <span id="navBadge" class="badge-n" hidden></span></a>
+      <a href="#drugkits" data-route="drugkits">ערכות סמים</a>
       <a href="#sign" data-route="sign">החתמה</a>
       <a href="#ledger" data-route="ledger">ספר סמים</a>
       <a href="#count" data-route="count">ספירת מלאי</a>
       <a href="#locations" data-route="locations">מיקומים וערכות</a>
       <a href="#notes" data-route="notes" id="navNotes" hidden>פתקי החתמה</a>
     </nav>
-    <div class="fs" role="group" aria-label="גודל טקסט">
+    <div class="fs" id="menuArea" role="group" aria-label="גודל טקסט">
       <span aria-hidden="true">גודל טקסט</span>
       <button type="button" data-fs="0" aria-label="טקסט רגיל">א</button>
       <button type="button" data-fs="1" aria-label="טקסט גדול">א+</button>
@@ -462,7 +571,7 @@ details.sg-month .sg-pills{margin-inline-start:auto}
 <dialog id="permDlg" aria-labelledby="permTitle">
   <form id="permForm" novalidate>
     <h2 id="permTitle">הרשאות משתמשים</h2>
-    <p class="sub">החתמה פתוחה לכל מי שיש לו גישה. לכל משתמש מאושר מסמנים אילו פעולות מותרות לו.</p>
+    <p class="sub">לכל משתמש מאושר קובעים לכל מסך: ללא גישה, צפייה בלבד או גישה מלאה. בגישה מלאה, הפעולות עצמן מוגבלות לפי הסימון בהמשך. החתמה דורשת גישה מלאה למסך "החתמה". משתמש חדש מתחיל בלי גישה לאף מסך.</p>
     <h3 style="margin:0;font-size:1rem">בקשות ממתינות</h3><div id="permPending"></div>
     <h3 style="margin:0;font-size:1rem">משתמשים מאושרים</h3><div id="permList"></div>
     <div class="dlg-actions"><button class="btn" type="button" data-close>סגירה</button></div>
@@ -510,8 +619,8 @@ details.sg-month .sg-pills{margin-inline-start:auto}
 (function(){
 'use strict';
 const DEFAULT_LOCS=['כספת אחורית','כספת קידמית'];
-const COLS=['items','kits','locations','moves','catalog','batches','perms','ledger','counts','cancels','caregivers','meta','recon'];
-const S={items:{},kits:{},locations:{},moves:{},catalog:{},batches:{},perms:{},ledger:{},counts:{},cancels:{},caregivers:{},meta:{},recon:{}};
+const COLS=['items','kits','locations','moves','catalog','batches','perms','ledger','counts','cancels','caregivers','meta','recon','boxes','boxtpl'];
+const S={items:{},kits:{},locations:{},moves:{},catalog:{},batches:{},perms:{},ledger:{},counts:{},cancels:{},caregivers:{},meta:{},recon:{},boxes:{},boxtpl:{}};
 const LS_KEY='inv-data-v1', FS_KEY='inv-fs';
 let mode='loading', db=null, loadErr=false, route='dashboard';
 let user=null, me={id:null,isOwner:false}, signPrefill=null;
@@ -565,7 +674,7 @@ function subscribe(){
   const t=setTimeout(()=>{ if(pending.size){ loadErr=true; renderData(); } },10000);
   const done=c=>{ if(pending.delete(c) && !pending.size){ clearTimeout(t); mode='db'; } renderData(); };
   const onErr=c=>e=>{ if(e&&e.code==='revoked'){ toast('הגישה לנתונים הסתיימה.'); } done(c); };
-  ['items','kits','locations','catalog','batches','perms','ledger','counts','cancels','caregivers','meta','recon'].forEach(c=>{
+  ['items','kits','locations','catalog','batches','perms','ledger','counts','cancels','caregivers','meta','recon','boxes','boxtpl'].forEach(c=>{
     db.collection(c).onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=Object.assign({},d.data(),{id:d.id});}); S[c]=o; done(c); }, onErr(c));
   });
   db.collection('moves').orderBy('at','desc').limit(300).onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=Object.assign({},d.data(),{id:d.id});}); S.moves=o; done('moves'); }, onErr('moves'));
@@ -610,7 +719,7 @@ function shellDashboard(){
   const d=new Date().toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   $('#main').innerHTML=`
   <div class="page-head"><div><h1>לוח בקרה</h1><p class="sub">${esc(d)}</p></div>
-  <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn" data-act="add-item">+ הוספת פריט</button><button class="btn" data-act="add-kit">+ הוספת ערכה</button><button class="btn" data-act="mins">מינימום מלאי</button><button class="btn" data-act="backup">גיבוי</button></div></div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn primary" data-act="add-item">+ הוספת פריט</button><button class="btn" data-act="add-kit">+ הוספת ערכה</button><button class="btn" data-act="mins">מינימום מלאי</button><button class="btn" data-act="backup">גיבוי</button></div></div>
   <div id="notice"></div>
   <section class="rem" id="dRem" aria-live="polite"></section>
   <section id="dHero" aria-live="polite"></section>
@@ -627,22 +736,27 @@ function shellInventory(){
   <div class="page-head"><div><h1>מלאי</h1><p class="sub">כל הפריטים, עם הוספה והורדה של כמויות.</p></div>
   <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn" data-act="inv-csv">ייצוא ל־CSV</button><button class="btn" data-act="perm" id="permBtn" hidden>הרשאות משתמשים</button><button class="btn" data-act="req-perm" id="reqBtn" hidden>בקשת הרשאות</button><button class="btn primary" data-act="add-item">+ הוספת פריט</button></div></div>
   <div id="notice"></div>
-  <div class="toolbar" role="search">
+  <div class="toolbar" role="search" id="iTools">
     <div class="field"><label for="iq">חיפוש</label><input id="iq" type="search" placeholder="שם, מק״ט או אצווה" value="${esc(inv.q)}"></div>
-    <div class="field"><label for="ist">סטטוס</label><select id="ist">
+    <button type="button" class="btn sm filt-btn" id="iFilt" aria-expanded="false" aria-controls="iTools">סינון ומיון</button>
+    <div class="field adv"><label for="ist">סטטוס</label><select id="ist">
       <option value="all">הכל</option><option value="alert">דורש טיפול</option><option value="soon">פג החודש</option><option value="expired">פג תוקף</option><option value="ok">בתוקף</option></select></div>
-    <div class="field"><label for="iloc">מיקום</label><select id="iloc"></select></div>
-    <div class="field"><label for="isort">מיון</label><select id="isort">
+    <div class="field adv"><label for="iloc">מיקום</label><select id="iloc"></select></div>
+    <div class="field adv"><label for="isort">מיון</label><select id="isort">
       <option value="exp">לפי תאריך תפוגה</option><option value="name">לפי שם</option><option value="qty">לפי כמות</option><option value="sku">לפי מק״ט</option></select></div>
   </div>
   <p class="count-line" id="iCount" aria-live="polite"></p>
   <div class="tbl-wrap" id="iTable"></div>
   <p class="legend"><span>מקרא:</span>${PILL.soon}<span>החודש הוא חודש התפוגה</span>${PILL.expired}<span>חודש התפוגה עבר</span></p>`;
   $('#ist').value=inv.status; $('#isort').value=inv.sort;
+  // בטלפון: הסינון והמיון מוסתרים מאחורי כפתור, שמראה כמה מסננים פעילים
+  const filtLabel=()=>{ const n=(inv.status!=='all')+(!!inv.loc&&inv.loc!=='all')+(inv.sort!=='exp'); $('#iFilt').textContent='סינון ומיון'+(n===1?' (1 פעיל)':n?` (${n} פעילים)`:''); };
+  $('#iFilt').addEventListener('click',()=>{ const t=$('#iTools'); const o=t.classList.toggle('open'); $('#iFilt').setAttribute('aria-expanded',String(o)); });
+  filtLabel();
   $('#iq').addEventListener('input',e=>{inv.q=e.target.value; renderInvTable();});
-  $('#ist').addEventListener('change',e=>{inv.status=e.target.value; renderInvTable();});
-  $('#iloc').addEventListener('change',e=>{inv.loc=e.target.value; renderInvTable();});
-  $('#isort').addEventListener('change',e=>{inv.sort=e.target.value; renderInvTable();});
+  $('#ist').addEventListener('change',e=>{inv.status=e.target.value; filtLabel(); renderInvTable();});
+  $('#iloc').addEventListener('change',e=>{inv.loc=e.target.value; filtLabel(); renderInvTable();});
+  $('#isort').addEventListener('change',e=>{inv.sort=e.target.value; filtLabel(); renderInvTable();});
 }
 function shellLocations(){
   $('#main').innerHTML=`
@@ -690,6 +804,14 @@ function itemLine(o,isKit){
   const meta=isKit?`ערכה${o.serial?' '+esc(o.serial):''}, ${esc(o.loc)}`:`מק״ט ${esc(o.sku)}${o.batch?', אצווה '+esc(o.batch):''}, ${esc(o.loc)}, כמות ${esc(o.qty)}`;
   return `<li class="${s}"><div class="what"><strong>${isKit?'🧰 ':''}${esc(o.name)}</strong><small>${meta}. תוקף ${fmtExp(exp)}</small></div>${PILL[s]}</li>`;
 }
+const SVG=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const ICONS={
+  box:SVG('<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" x2="12" y1="22" y2="12"/>'),
+  layers:SVG('<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>'),
+  clock:SVG('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'),
+  x:SVG('<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>'),
+  kit:SVG('<rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>')
+};
 function renderDashboard(){
   const c=counts(); const alerts=c.soon+c.expired;
   const h=$('#dHero');
@@ -703,8 +825,8 @@ function renderDashboard(){
       ${alerts?'<div class="actions"><button class="btn primary" data-act="show-alerts">הצגת הפריטים במלאי</button></div>':''}</div></div>`;
   }
   $('#dStats').innerHTML=[
-    [c.rows,'שורות מלאי'],[c.units,'יחידות במלאי'],[c.soon,'פגים החודש'],[c.expired,'פגי תוקף'],[c.kits,'ערכות במלאי']
-  ].map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+    [c.rows,'שורות מלאי','box'],[c.units,'יחידות במלאי','layers'],[c.soon,'פגים החודש','clock'],[c.expired,'פגי תוקף','x'],[c.kits,'ערכות במלאי','kit']
+  ].map(([n,l,ic])=>`<div class="stat"><span class="ic" aria-hidden="true">${ICONS[ic]}</span><b>${n}</b><span>${l}</span></div>`).join('');
   const att=Object.values(S.items).filter(i=>status(i.exp)!=='ok').map(i=>({o:i,k:false,e:i.exp}))
     .concat(Object.values(S.kits).filter(k=>k.status!=='issued'&&status(kitExp(k))!=='ok').map(k=>({o:k,k:true,e:kitExp(k)})))
     .sort((a,b)=>(a.e||'').localeCompare(b.e||''));
@@ -805,8 +927,10 @@ function renderData(){
   const c=counts(); const n=c.soon+c.expired; const b=$('#navBadge');
   b.hidden=!n; b.textContent=n; b.setAttribute('aria-label',`${n} התראות תוקף`);
   updatePermButtons();
+  if(applyAccess()===false) return;
   if(route==='dashboard') renderDashboard();
   else if(route==='inventory') renderInvTable();
+  else if(route==='drugkits') renderBoxes();
   else if(route==='locations') renderLocations();
   else if(route==='sign') renderSign();
   else if(route==='ledger') renderLedger();
@@ -818,6 +942,31 @@ function renderData(){
 const permKey=id=>'u_'+String(id).replace(/[^A-Za-z0-9_-]/g,'_');
 const PERM_FLAGS=[['receive','קבלת מלאי'],['lower','הורדה'],['edit','עריכה, מחיקה והוספה של פריטים וערכות'],['count','ספירת מלאי']];
 function canDo(f){ if(mode!=='db') return true; if(me.isOwner) return true; const p=me.id&&S.perms[permKey(me.id)]; if(!(p&&p.status==='approved'&&p.uid===me.id)) return false; return !!(p.flags||{lower:true})[f]; }
+
+/* ---------- screen access per user: none / view / full ---------- */
+const TABS=[['dashboard','לוח בקרה'],['inventory','מלאי'],['drugkits','ערכות סמים'],['sign','החתמה'],['ledger','ספר סמים'],['count','ספירת מלאי'],['locations','מיקומים וערכות']];
+const LVLS=[['none','ללא גישה'],['view','צפייה בלבד'],['full','גישה מלאה']];
+const accessReady=()=>mode==='db'&&!!me.id;
+function tabLevel(t){
+  if(mode==='local'||me.isOwner) return 'full';
+  if(!accessReady()) return 'view'; // עד שהנתונים נטענים: בלי פעולות ובלי הפניות
+  if(t==='notes') return 'none';
+  const p=S.perms[permKey(me.id)]; if(!(p&&p.status==='approved'&&p.uid===me.id)) return 'none';
+  const v=(p.tabs||{})[t]; return v==='view'||v==='full'?v:'none';
+}
+const canSee=t=>tabLevel(t)!=='none', canFull=t=>tabLevel(t)==='full';
+const firstTab=()=>{ const t=TABS.find(([k])=>canSee(k)); return t?t[0]:null; };
+function applyAccess(){
+  document.querySelectorAll('nav.tabs a[data-route]').forEach(a=>{ if(a.dataset.route!=='notes') a.hidden=!canSee(a.dataset.route); });
+  document.body.classList.toggle('ro',route!=='noaccess'&&tabLevel(route)==='view');
+  document.body.classList.toggle('no-sign',!canFull('sign'));
+  if(accessReady()&&!me.isOwner){ const ok=route==='noaccess'?!firstTab():canSee(route); if(!ok){ go(); return false; } }
+  return true;
+}
+function shellNoAccess(){
+  $('#main').innerHTML=`<div class="page-head"><div><h1>אין עדיין גישה למסכים</h1><p class="sub">בקשת ההרשאות שלך נשלחה למנהל. אחרי שהמנהל יאשר ויפתח לך מסכים, הם יופיעו כאן לבד, בלי לרענן.</p></div></div>
+  <div id="notice"></div><div class="row-act"><button class="btn primary" data-act="req-perm" id="reqBtn" hidden>בקשת הרשאות</button></div>`;
+}
 function canLower(){ return canDo('lower'); }
 function updatePermButtons(){
   const pb=$('#permBtn'), rb=$('#reqBtn'); const live=mode==='db'&&user&&me.id;
@@ -829,15 +978,19 @@ function renderPerm(){
   const all=Object.values(S.perms).sort((a,b)=>(a.at||0)-(b.at||0));
   const pend=all.filter(p=>p.status==='pending'), ok=all.filter(p=>p.status==='approved');
   $('#permPending').innerHTML=pend.length?`<ul class="list perm-list">${pend.map(p=>`<li><span><strong>${esc(p.name)}</strong> <small class="hint">${new Date(p.at).toLocaleDateString('he-IL')}</small></span><span class="row-act"><button type="button" class="btn sm primary" data-perm="approve" data-id="${esc(p.id)}">אישור</button><button type="button" class="btn sm danger" data-perm="remove" data-id="${esc(p.id)}">דחייה</button></span></li>`).join('')}</ul>`:'<p class="empty">אין בקשות ממתינות.</p>';
-  $('#permList').innerHTML=ok.length?`<ul class="list perm-list">${ok.map(p=>{ const fl=p.flags||{lower:true}; return `<li style="display:block"><div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem"><strong>${esc(p.name)}</strong><button type="button" class="btn sm danger" data-perm="remove" data-id="${esc(p.id)}">הסרת המשתמש</button></div><div class="flags">${PERM_FLAGS.map(([f,l])=>`<label class="chk"><input type="checkbox" data-flag="${f}" data-id="${esc(p.id)}" ${fl[f]?'checked':''}> ${l}</label>`).join('')}</div></li>`; }).join('')}</ul>`:'<p class="empty">עדיין אין משתמשים מאושרים.</p>';
+  $('#permList').innerHTML=ok.length?`<ul class="list perm-list">${ok.map(p=>{ const fl=p.flags||{lower:true}; return `<li style="display:block"><div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem"><strong>${esc(p.name)}</strong><button type="button" class="btn sm danger" data-perm="remove" data-id="${esc(p.id)}">הסרת המשתמש</button></div><div class="tab-lvl"><span class="flags-h" style="grid-column:1/-1">גישה למסכים</span>${TABS.map(([t,l])=>{ const v=(p.tabs||{})[t]||'none'; return `<label>${l}<select data-tab="${t}" data-id="${esc(p.id)}" aria-label="גישה של ${esc(p.name)} למסך ${l}">${LVLS.map(([k,n])=>`<option value="${k}" ${v===k?'selected':''}>${n}</option>`).join('')}</select></label>`; }).join('')}</div><div class="flags"><span class="flags-h">פעולות מותרות (במסכים עם גישה מלאה)</span>${PERM_FLAGS.map(([f,l])=>`<label class="chk"><input type="checkbox" data-flag="${f}" data-id="${esc(p.id)}" ${fl[f]?'checked':''}> ${l}</label>`).join('')}</div></li>`; }).join('')}</ul>`:'<p class="empty">עדיין אין משתמשים מאושרים.</p>';
 }
 function openPerm(){ if(!me.isOwner) return; renderPerm(); openDlg($('#permDlg')); }
 $('#permForm').addEventListener('submit',e=>e.preventDefault());
-$('#permDlg').addEventListener('change',async e=>{ const c=e.target.closest('[data-flag]'); if(!c) return; const p=S.perms[c.dataset.id]; if(!p) return;
+$('#permDlg').addEventListener('change',async e=>{
+  const s=e.target.closest('[data-tab]');
+  if(s){ const p=S.perms[s.dataset.id]; if(!p) return; const tb=Object.assign({},p.tabs||{},{[s.dataset.tab]:s.value});
+    if(await put('perms',Object.assign({},p,{tabs:tb}))) toast('הגישה למסך עודכנה'); return; }
+  const c=e.target.closest('[data-flag]'); if(!c) return; const p=S.perms[c.dataset.id]; if(!p) return;
   const fl=Object.assign({},p.flags||{lower:true},{[c.dataset.flag]:c.checked}); if(await put('perms',Object.assign({},p,{flags:fl}))) toast('ההרשאות עודכנו'); });
 $('#permDlg').addEventListener('click',async e=>{
   const b=e.target.closest('[data-perm]'); if(!b) return; const p=S.perms[b.dataset.id]; if(!p) return;
-  if(b.dataset.perm==='approve'){ if(await put('perms',Object.assign({},p,{status:'approved',decidedAt:Date.now(),flags:p.flags||{receive:true,count:true,lower:false,edit:false}}))) toast(`${p.name} אושר. סמנו אילו פעולות מותרות לו.`); }
+  if(b.dataset.perm==='approve'){ if(await put('perms',Object.assign({},p,{status:'approved',decidedAt:Date.now(),flags:p.flags||{receive:true,count:true,lower:false,edit:false},tabs:Object.fromEntries(TABS.map(([t])=>[t,'none']))}))) toast(`${p.name} אושר. עכשיו קבעו לאילו מסכים יש לו גישה.`); }
   else if(await del('perms',p.id)) toast('ההרשאה הוסרה');
   setTimeout(renderPerm,300);
 });
@@ -893,6 +1046,7 @@ function shellSign(){
 }
 const cssId=n=>Array.from(n).map(c=>c.charCodeAt(0).toString(36)).join('-');
 function setRxTab(){
+  if(!canFull('sign')) rxTab='month'; // צפייה בלבד: רק הפירוט החודשי
   const m=rxTab==='month';
   $('#rxTabNew').setAttribute('aria-selected',String(!m)); $('#rxTabMonth').setAttribute('aria-selected',String(m));
   $('#rxPanelNew').hidden=m; $('#rxPanelMonth').hidden=!m;
@@ -1087,8 +1241,8 @@ $('#genForm').addEventListener('submit',async e=>{
 });
 
 /* ---------- stock helpers + ledger ---------- */
-function kitStockOf(name){ return Object.values(S.kits).filter(k=>k.status!=='issued').reduce((t,k)=>t+(k.contents||[]).filter(c=>c.name===name).reduce((a,c)=>a+(+c.qty||0),0),0); }
-function kitStockExcl(name,kid){ return Object.values(S.kits).filter(k=>k.id!==kid&&k.status!=='issued').reduce((t,k)=>t+(k.contents||[]).filter(c=>c.name===name).reduce((a,c)=>a+(+c.qty||0),0),0); }
+function kitStockOf(name){ return Object.values(S.kits).filter(k=>k.status!=='issued').reduce((t,k)=>t+(k.contents||[]).filter(c=>c.name===name).reduce((a,c)=>a+(+c.qty||0),0),0)+boxStockOf(name); }
+function kitStockExcl(name,kid){ return Object.values(S.kits).filter(k=>k.id!==kid&&k.status!=='issued').reduce((t,k)=>t+(k.contents||[]).filter(c=>c.name===name).reduce((a,c)=>a+(+c.qty||0),0),0)+boxStockOf(name); }
 function kitTotals(k){ const t={}; if(k&&k.status!=='issued') (k.contents||[]).forEach(c=>{ t[c.name]=(t[c.name]||0)+(+c.qty||0); }); return t; }
 function balAfter(o){ return Object.values(S.items).filter(i=>i.name===o.name&&i.id!==o.id).reduce((t,i)=>t+(+i.qty||0),0)+(+o.qty||0); }
 function skuOf(name){ const it=Object.values(S.items).find(i=>i.name===name&&i.sku); if(it) return it.sku; const d=DRUGS.find(x=>x[0]===name); if(d) return d[1]; const c=Object.values(S.catalog).find(x=>x.name===name); return c?c.sku:''; }
@@ -1219,9 +1373,11 @@ function renderReminders(){
   if(dr===null||dr>=14) out.push(`<div class="notice"><span>הדוח הדו־שבועי של ספר הסמים מוכן להפקה.</span><a class="btn sm" href="#ledger">לספר הסמים</a></div>`);
   const low=lowStock(); if(low.length) out.push(`<div class="notice bad"><span><strong>מלאי נמוך:</strong> ${low.map(x=>`${esc(x.name)} ב${esc(x.loc)} (${x.have}, מינימום ${x.min})`).join(', ')}</span></div>`);
   const rc=unreconciled(); if(rc.length) out.push(`<div class="notice bad"><span><strong>${rc.length} פתקי החתמה לא ירדו מהמלאי.</strong> ${rc.slice(0,5).map(n=>`${esc((n.date||'').split('-').reverse().join('/'))} ${esc(n.name)} (${esc((n.items||[]).map(it=>(it.drug==='other'?it.name:rxHe(it.drug))+' '+it.qty).join(', '))})`).join('; ')}. עדכנו את המלאי ידנית ואז סמנו כטופל.</span><button class="btn sm" type="button" data-recon-all>סימון כטופל</button></div>`);
+  if(canSee('drugkits')){ const bs=Object.values(S.boxes), em=bs.filter(b=>b.status==='empty').length, lg=bs.filter(b=>b.status==='signed'&&bxDays(b.since)>=14).length;
+    if(em||lg) out.push(`<div class="notice"><span><strong>ערכות סמים:</strong> ${[em?em+' קופסאות ריקות ממתינות למילוי':'',lg?lg+' קופסאות חתומות יותר משבועיים':''].filter(Boolean).join(', ')}.</span><a class="btn sm" href="#drugkits">לערכות סמים</a></div>`); }
   el.innerHTML=out.join('');
 }
-document.addEventListener('click',async e=>{ if(!e.target.closest('[data-recon-all]')) return; for(const n of unreconciled()) await put('recon',{id:'r'+n.ts,ts:n.ts,at:Date.now()}); toast('הפתקים סומנו כטופלו'); renderReminders(); });
+document.addEventListener('click',async e=>{ if(!e.target.closest('[data-recon-all]')) return; if(!canFull('dashboard')) return toast('יש לך הרשאת צפייה בלבד במסך הזה.'); for(const n of unreconciled()) await put('recon',{id:'r'+n.ts,ts:n.ts,at:Date.now()}); toast('הפתקים סומנו כטופלו'); renderReminders(); });
 
 /* ---------- minimum stock ---------- */
 function openMins(){
@@ -1235,7 +1391,7 @@ function openMins(){
 /* ---------- backup / export ---------- */
 async function doBackup(){
   const data={exportedAt:new Date().toISOString()};
-  ['items','kits','locations','catalog','batches','ledger','counts','cancels','caregivers','meta','moves'].forEach(c=>{ data[c]=Object.values(S[c]); });
+  ['items','kits','locations','catalog','batches','ledger','counts','cancels','caregivers','meta','moves','boxes','boxtpl'].forEach(c=>{ data[c]=Object.values(S[c]||{}); });
   if(await saveFile(`גיבוי-מלאי-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(data,null,1),'application/json')) toast('הגיבוי נשמר');
 }
 async function exportInvCsv(){
@@ -1245,7 +1401,7 @@ async function exportInvCsv(){
 
 /* ---------- ספר סמים (נספח ב׳) ---------- */
 let lgDrug='', lgPeriod='14';
-const TYPE_HE={receive:'קבלת מלאי',out:'הורדה',sign:'החתמה','kit-sign':'החתמה מערכה',cancel:'זיכוי פתק',count:'ספירת מלאי',adjust:'התאמה לספירה',kit:'ערכות'};
+const TYPE_HE={'box-fill':'מילוי קופסת סמים','box-use':'שימוש מקופסת סמים','box-return':'החזרה מקופסה למלאי','box-open':'רישום קופסאות קיימות',receive:'קבלת מלאי',out:'הורדה',sign:'החתמה','kit-sign':'החתמה מערכה',cancel:'זיכוי פתק',count:'ספירת מלאי',adjust:'התאמה לספירה',kit:'ערכות'};
 function ledgerNames(){ const ord=n=>{ const x=DRUGS.findIndex(d=>d[0]===n); return x<0?99:x; };
   return [...new Set(DRUGS.map(d=>d[0]).concat(Object.values(S.items).map(i=>i.name),Object.values(S.ledger).map(l=>l.name)).filter(Boolean))].sort((a,b)=>ord(a)-ord(b)||a.localeCompare(b,'he')); }
 function ledgerRows(name,p){ return Object.values(S.ledger).filter(l=>(!name||l.name===name)&&inPeriod(l.at,p)).sort((a,b)=>a.at-b.at); }
@@ -1284,7 +1440,7 @@ async function exportBiweekly(){
   const rows=ledgerRows('', '14').sort((a,b)=>a.name.localeCompare(b.name,'he')||a.at-b.at);
   const sum=ledgerNames().map(n=>[n,skuOf(n),stockOf(n),kitStockOf(n)]);
   const data=[['דוח דו־שבועי, ספר סמים',fmtDT(Date.now())],[],['סיכום'],['שם פריט','מק״ט','יתרה כעת','בערכות']].concat(sum,[[],['תנועות ב־14 הימים האחרונים'],['שם פריט','מק״ט'].concat(LG_HEAD)],rows.map(l=>[l.name,l.sku||''].concat(lgRow(l))));
-  if(await saveFile(`דוח-דו-שבועי-${new Date().toISOString().slice(0,10)}.csv`,csv(data),'text/csv')){ setMeta({lastReport:Date.now()}); toast('הדוח הדו־שבועי נשמר'); }
+  if(await saveFile(`דוח-דו-שבועי-${new Date().toISOString().slice(0,10)}.csv`,csv(data),'text/csv')){ if(canFull('ledger')) setMeta({lastReport:Date.now()}); toast('הדוח הדו־שבועי נשמר'); }
 }
 
 /* ---------- ספירת מלאי ---------- */
@@ -1309,7 +1465,7 @@ function shellCount(){
   $('#cTable').addEventListener('change',e=>{ const k=e.target.dataset.kitok; if(k&&cnt) cnt.kits[k]=e.target.checked; });
   $('#cSave').addEventListener('click',saveCount);
   $('#cCancel').addEventListener('click',()=>{ cnt=null; renderCount(); });
-  $('#cStatus').addEventListener('click',e=>{ if(!e.target.closest('#cStart')) return; if(!canDo('count')) return toast('אין לך הרשאה לספירת מלאי.');
+  $('#cStatus').addEventListener('click',e=>{ if(!e.target.closest('#cStart')) return; if(!canFull('count')||!canDo('count')) return toast('אין לך הרשאה לספירת מלאי.');
     cnt={vals:{},kits:{}}; renderCount(); $('#cName').value=myName; $('#cNotes').value=''; $('#cAdjust').checked=false; $('#cErr').textContent='';
     setTimeout(()=>{ cPad.reset(); const f=$('#cTable input'); if(f) f.focus(); },60); });
 }
@@ -1363,15 +1519,35 @@ async function saveCount(){
 /* ---------- routing ---------- */
 function go(){
   const h=(location.hash||'').slice(1);
-  const r=['dashboard','inventory','locations','notes','sign','ledger','count'].includes(h)?h:(h.startsWith('loc-')?'locations':'dashboard');
+  let r=['dashboard','inventory','drugkits','locations','notes','sign','ledger','count','noaccess'].includes(h)?h:(h.startsWith('loc-')?'locations':'dashboard');
+  // מסך שאין למשתמש גישה אליו: עוברים למסך הראשון שמותר, או לעמוד "אין גישה"
+  if(accessReady()&&!me.isOwner){ if(r==='noaccess'?firstTab():!canSee(r)){ r=firstTab()||'noaccess'; history.replaceState(null,'','#'+r); } }
+  else if(r==='noaccess') r='dashboard';
   const changed=r!==route||!$('#main').children.length; route=r;
-  document.querySelectorAll('nav.tabs a').forEach(a=>{ if(a.dataset.route===r) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
-  if(changed){ ({dashboard:shellDashboard,inventory:shellInventory,locations:shellLocations,notes:shellNotes,sign:shellSign,ledger:shellLedger,count:shellCount})[r](); renderData(); }
+  document.querySelectorAll('nav.tabs a').forEach(a=>{ if(a.dataset.route===r){ a.setAttribute('aria-current','page'); revealTab(a); } else a.removeAttribute('aria-current'); });
+  closeMenu();
+  if(changed){ ({dashboard:shellDashboard,inventory:shellInventory,drugkits:shellDrugkits,locations:shellLocations,notes:shellNotes,sign:shellSign,ledger:shellLedger,count:shellCount,noaccess:shellNoAccess})[r](); renderData(); }
+  else applyAccess();
   if(r==='sign'&&signPrefill) applyPrefill();
   if(h.startsWith('loc-')){ const el=document.getElementById(h); if(el){ el.scrollIntoView(); el.focus({preventScroll:true}); } }
-  document.title=({dashboard:'לוח בקרה',inventory:'מלאי',locations:'מיקומים וערכות',notes:'פתקי החתמה',sign:'החתמה',ledger:'ספר סמים',count:'ספירת מלאי'})[r]+' | ניהול מלאי';
+  document.title=({dashboard:'לוח בקרה',inventory:'מלאי',drugkits:'ערכות סמים',locations:'מיקומים וערכות',notes:'פתקי החתמה',sign:'החתמה',ledger:'ספר סמים',count:'ספירת מלאי',noaccess:'אין גישה'})[r]+' | ניהול מלאי';
 }
 window.addEventListener('hashchange',go);
+
+/* ---------- phone header: menu button + scrollable tabs ---------- */
+const navTabs=document.querySelector('nav.tabs');
+function tabFades(){ // RTL: scrollLeft is 0 at the start (right) and negative toward the end (left)
+  const max=navTabs.scrollWidth-navTabs.clientWidth, pos=Math.abs(navTabs.scrollLeft);
+  navTabs.classList.toggle('more-start',max>2&&pos>2); navTabs.classList.toggle('more-end',max>2&&pos<max-2); }
+function revealTab(a){ if(navTabs.scrollWidth<=navTabs.clientWidth) return;
+  const n=navTabs.getBoundingClientRect(), r=a.getBoundingClientRect();
+  if(r.left<n.left+24) navTabs.scrollLeft-=n.left+40-r.left; else if(r.right>n.right-24) navTabs.scrollLeft+=r.right-n.right+40; }
+navTabs.addEventListener('scroll',tabFades,{passive:true});
+window.addEventListener('resize',tabFades); new MutationObserver(tabFades).observe(navTabs,{subtree:true,attributes:true,attributeFilter:['hidden']});
+setTimeout(tabFades,0);
+function closeMenu(){ const h=document.querySelector('header.top'); if(!h.classList.contains('menu-open')) return; h.classList.remove('menu-open'); $('#menuBtn').setAttribute('aria-expanded','false'); }
+$('#menuBtn').addEventListener('click',()=>{ const h=document.querySelector('header.top'); const o=h.classList.toggle('menu-open'); $('#menuBtn').setAttribute('aria-expanded',String(o)); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeMenu(); });
 
 /* ---------- drug picker ---------- */
 const DRUGS=[['אקטיק','960190270'],['קטמין 50','960003235'],['קטמין 500','960003233'],['מידזולם','960006275'],['מורפיום','960003470'],['פנטניל','960002024']];
@@ -1590,6 +1766,264 @@ function confirmDlg(title,text,ok,withNote){
   });
 }
 
+/* ---------- ערכות סמים: קופסאות ממוספרות (בכספת / חתומה / ריקה) ---------- */
+const BOX_DEF_TPL={'קטמין 50':2,'קטמין 500':1,'אקטיק':2,'מידזולם':3,'מורפיום':3};
+const BOX_ST={vault:'בכספת',signed:'חתומה',empty:'ריקה'};
+const bx={f:'all',q:'',ser:'',loc:'',multi:false,sel:new Set()};
+const boxList=()=>Object.values(S.boxes);
+const boxSort=a=>a.sort((x,y)=>String(x.series).localeCompare(String(y.series))||(x.n||0)-(y.n||0));
+function boxTpl(series){ const t=S.boxtpl[series]||S.boxtpl.SA; return Object.assign({},(t&&t.items)||BOX_DEF_TPL); }
+function boxQty(b,name){ return b.status==='empty'?0:(b.contents||[]).filter(c=>c.name===name).reduce((a,c)=>a+(+c.qty||0),0); }
+function boxStockOf(name,excl){ return boxList().filter(b=>b.id!==excl).reduce((t,b)=>t+boxQty(b,name),0); }
+function boxExp(b){ if(b.status==='empty') return ''; const e=(b.contents||[]).map(c=>c.exp).filter(Boolean).sort(); return e[0]||''; }
+function boxDrugs(){ const s=new Set(Object.keys(BOX_DEF_TPL)); Object.values(S.boxtpl).forEach(t=>Object.keys(t.items||{}).forEach(n=>s.add(n))); return [...s]; }
+const bxDays=t=>Math.floor((Date.now()-(t||Date.now()))/864e5);
+const bxText=o=>Object.entries(o).filter(([,q])=>q>0).map(([d,q])=>`${d} ${q}`).join(', ')||'כלום';
+function bxPick(name,qty){ const out=[]; let left=qty;
+  Object.values(S.items).filter(i=>i.name===name&&(+i.qty||0)>0&&status(i.exp)!=='expired')
+    .sort((a,b)=>(a.exp||'9999').localeCompare(b.exp||'9999')).forEach(i=>{ if(left<=0) return; const q=Math.min(left,+i.qty); out.push({i,q}); left-=q; });
+  return {out,short:left}; }
+async function bxSave(b,text){ b.history=(b.history||[]).concat({at:Date.now(),text,by:myName||''}).slice(-60); b.updatedAt=Date.now(); return put('boxes',clean(b)); }
+const bxCan=()=>canFull('drugkits');
+
+function shellDrugkits(){
+  $('#main').innerHTML=`
+  <div class="page-head"><div><h1>ערכות סמים</h1><p class="sub">קופסאות סגורות וממוספרות. כל קופסה מלאה בכספת, חתומה אצל רופא, או ריקה.</p></div>
+  <div class="bx-acts" id="bxActs" style="display:flex;gap:.5rem;flex-wrap:wrap">
+    <button class="btn primary" type="button" data-bx="multi" id="bxMulti">בחירת כמה קופסאות</button>
+    <button class="btn" type="button" data-bx="fillall">מילוי כל הריקות</button>
+    <button class="btn" type="button" data-bx="count">ספירת קופסאות בכספת</button>
+    <button class="btn" type="button" data-bx="add">+ הוספת קופסאות</button>
+    <button class="btn" type="button" data-bx="tpl">תבנית</button></div></div>
+  <div id="notice"></div>
+  <div class="bx-stats" id="bxStats"></div>
+  <div id="bxAlerts"></div>
+  <section class="panel" aria-labelledby="bxH" style="margin-bottom:1rem">
+    <h2 id="bxH">כל הקופסאות</h2>
+    <div class="bx-seg" role="group" aria-label="סינון לפי מצב" id="bxSeg"></div>
+    <div class="bx-tools">
+      <div class="field"><label for="bxQ">חיפוש מספר קופסה או הערה</label><input id="bxQ" type="search" placeholder="למשל SA17" autocomplete="off" value="${esc(bx.q)}"></div>
+      <div class="field"><label for="bxSer">סדרה</label><select id="bxSer"></select></div>
+      <div class="field"><label for="bxLoc">מיקום</label><select id="bxLoc"></select></div>
+    </div>
+    <div class="bx-grid" id="bxGrid"></div>
+  </section>
+  <section class="panel" aria-labelledby="bxUH" style="margin-bottom:1rem">
+    <h2 id="bxUH">איפה נמצאים הסמים</h2>
+    <div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th scope="col">סם</th><th scope="col">מלאי חופשי</th><th scope="col">בקופסאות בכספת</th><th scope="col">בקופסאות חתומות</th><th scope="col">סה״כ בקופסאות</th><th scope="col">סה״כ הכל</th></tr></thead><tbody id="bxUnits"></tbody></table></div>
+    <p class="hint" style="margin:.6rem 0 0">"סה״כ בקופסאות" מופיע בספר הסמים בעמודה "מלאי בערכות / תרמילים".</p>
+  </section>
+  <section class="panel" aria-labelledby="bxLH"><h2 id="bxLH">תנועות קופסאות בספר הסמים</h2><ul class="bx-log" id="bxLog"></ul></section>
+  <div class="bx-bar" id="bxBar" hidden role="region" aria-label="פעולות על קופסאות שנבחרו">
+    <span id="bxBarN"></span>
+    <button class="btn sm" type="button" data-bulk="sign">יצאו חתומות</button>
+    <button class="btn sm" type="button" data-bulk="sealed">חזרו סגורות</button>
+    <button class="btn sm primary" type="button" data-bulk="fill">מילוי</button>
+    <button class="btn sm" type="button" data-bulk="loc">העברת מיקום</button>
+    <button class="btn sm bx-ghost" type="button" data-bulk="clear">ביטול</button>
+  </div>`;
+  $('#bxQ').addEventListener('input',e=>{ bx.q=e.target.value; renderBoxes(); });
+  $('#bxSer').addEventListener('change',e=>{ bx.ser=e.target.value; renderBoxes(); });
+  $('#bxLoc').addEventListener('change',e=>{ bx.loc=e.target.value; renderBoxes(); });
+}
+function renderBoxes(){
+  if(!$('#bxGrid')) return;
+  const all=boxList(), c={vault:0,signed:0,empty:0}; all.forEach(b=>c[b.status]=(c[b.status]||0)+1);
+  const can=bxCan(); $('#bxActs').hidden=!can;
+  if(!can&&bx.multi){ bx.multi=false; bx.sel.clear(); }
+  const units=all.reduce((t,b)=>t+(b.status==='empty'?0:(b.contents||[]).reduce((a,x)=>a+(+x.qty||0),0)),0);
+  const tile=(f,cls,ic,n,l)=>`<button type="button" class="bx-stat ${cls}" data-bxf="${f}" ${['vault','signed','empty'].includes(f)&&bx.f===f?'aria-pressed="true"':''}><span class="ic" aria-hidden="true">${ICONS[ic]}</span><b>${n}</b><span>${l}</span></button>`;
+  $('#bxStats').innerHTML=tile('vault','s-vault','box',c.vault,'בכספת, מלאות')+tile('signed','s-signed','clock',c.signed,'חתומות (יצאו)')+tile('empty','s-empty','x',c.empty,'ריקות')+tile('all','s-all','kit',all.length,'סה״כ קופסאות')+tile('all','s-units','layers',units,'יחידות סם בקופסאות');
+  const long=all.filter(b=>b.status==='signed'&&bxDays(b.since)>=14);
+  const expd=all.filter(b=>b.status!=='empty'&&status(boxExp(b))!=='ok');
+  $('#bxAlerts').innerHTML=(long.length?`<div class="notice warn"><span><strong>${long.length} קופסאות חתומות יותר משבועיים:</strong> ${long.map(b=>`${esc(b.id)}${b.to?' ('+esc(b.to)+')':''}, ${bxDays(b.since)} ימים`).join(' · ')}</span></div>`:'')
+    +(expd.length?`<div class="notice bad"><span><strong>${expd.length} קופסאות עם סם שפג תוקפו או פג החודש:</strong> ${expd.map(b=>`${esc(b.id)} (${fmtExp(boxExp(b))})`).join(' · ')}</span></div>`:'')
+    +(c.empty?`<div class="notice"><span><strong>${c.empty} קופסאות ריקות</strong> ממתינות למילוי.</span>${can?'<button class="btn sm" type="button" data-bx="fillall">מילוי עכשיו</button>':''}</div>`:'');
+  $('#bxSeg').innerHTML=[['all','הכל',all.length],['vault','בכספת',c.vault],['signed','חתומות',c.signed],['empty','ריקות',c.empty]].map(([f,l,n])=>`<button type="button" data-bxf="${f}" aria-pressed="${bx.f===f}">${l}<span class="n">${n}</span></button>`).join('');
+  const sers=[...new Set(all.map(b=>b.series))].sort(); $('#bxSer').innerHTML='<option value="">כל הסדרות</option>'+sers.map(s=>`<option ${s===bx.ser?'selected':''}>${esc(s)}</option>`).join('');
+  $('#bxLoc').innerHTML='<option value="">כל המיקומים</option>'+allLocs().map(l=>`<option value="${esc(l)}" ${l===bx.loc?'selected':''}>${esc(l)}</option>`).join('');
+  const q=bx.q.trim().toLowerCase();
+  const list=boxSort(all.filter(b=>(bx.f==='all'||b.status===bx.f)&&(!bx.ser||b.series===bx.ser)&&(!bx.loc||b.loc===bx.loc)&&(!q||b.id.toLowerCase().includes(q)||(b.to||'').toLowerCase().includes(q))));
+  $('#bxGrid').innerHTML=list.length?list.map(b=>{ const e=boxExp(b), st=status(e);
+    const sub=b.status==='signed'?(b.to?esc(b.to)+' · ':'')+(bxDays(b.since)?bxDays(b.since)+' ימים':'היום'):b.status==='empty'?'ממתינה למילוי':(e?'תוקף קרוב: '+fmtExp(e).slice(3):'תוקף לא נרשם');
+    return `<button type="button" class="bx-box ${b.status}${bx.sel.has(b.id)?' sel':''}${b.status!=='empty'&&st!=='ok'?' exp-'+st:''}" data-box="${esc(b.id)}" ${bx.multi?`aria-pressed="${bx.sel.has(b.id)}"`:''}>${bx.multi?'<span class="tick" aria-hidden="true">✓</span>':''}<span class="num">${esc(b.id)}</span><span class="bx-st ${b.status}">${BOX_ST[b.status]}</span><small>${esc(b.loc||'')}<br>${sub}</small></button>`; }).join(''):'<p class="empty">'+(all.length?'אין קופסאות שמתאימות לחיפוש.':'עוד אין קופסאות. לוחצים "הוספת קופסאות" כדי להתחיל.')+'</p>';
+  $('#bxUnits').innerHTML=boxDrugs().map(d=>{ let v=0,s=0; all.forEach(b=>{ const q=boxQty(b,d); if(b.status==='vault') v+=q; else if(b.status==='signed') s+=q; }); const f=stockOf(d);
+    return `<tr><th scope="row" style="background:none;color:var(--ink);font-weight:600">${esc(d)}</th><td class="num">${f}</td><td class="num">${v}</td><td class="num">${s}</td><td class="num" style="background:var(--accent-soft)">${v+s}</td><td class="num">${f+v+s}</td></tr>`; }).join('');
+  const lg=Object.values(S.ledger).filter(l=>String(l.type).startsWith('box-')).sort((a,b)=>b.at-a.at).slice(0,40);
+  $('#bxLog').innerHTML=lg.length?lg.map(l=>`<li class="${l.type}"><time>${fmtDT(l.at)}</time>${esc(TYPE_HE[l.type]||l.type)}: ${esc(l.name)} ${l.inQty?'+'+l.inQty:''}${l.outQty?'−'+l.outQty:''}${l.batch?' · אצווה '+esc(l.batch):''}${l.note?' · '+esc(l.note):''}</li>`).join(''):'<li>עוד אין תנועות.</li>';
+  $('#bxBar').hidden=!(bx.multi&&bx.sel.size); $('#bxBarN').textContent=`${bx.sel.size} נבחרו`; $('#bxMulti').textContent=bx.multi?'סיום בחירה':'בחירת כמה קופסאות';
+}
+
+/* ---------- details ---------- */
+function bxOpen(id){
+  const b=S.boxes[id]; if(!b) return; const can=bxCan(), t=boxTpl(b.series);
+  const comp=b.status==='empty'?Object.keys(t).map(d=>`<div><span>${esc(d)}</span><strong>0 / ${t[d]}</strong></div>`).join('')
+    :(b.contents||[]).map(x=>`<div><span>${esc(x.name)} <span class="hint">${x.batch?'אצווה '+esc(x.batch)+' · ':''}${x.exp?'תוקף '+fmtExp(x.exp).slice(3):'תוקף לא נרשם'}</span></span><span>${x.exp&&status(x.exp)!=='ok'?PILL[status(x.exp)]+' ':''}<strong>${x.qty}</strong></span></div>`).join('');
+  const acts=!can?'':b.status==='vault'?`<button class="btn" type="button" data-bxa="sign" data-id="${esc(id)}">יצאה חתומה</button><button class="btn" type="button" data-bxa="edit" data-id="${esc(id)}">עריכת מיקום ותוקף</button>`
+    :b.status==='signed'?`<button class="btn primary" type="button" data-bxa="sealed" data-id="${esc(id)}">חזרה סגורה</button><button class="btn" type="button" data-bxa="opened" data-id="${esc(id)}">חזרה פתוחה</button><button class="btn" type="button" data-bxa="edit" data-id="${esc(id)}">עריכת מיקום ותוקף</button>`
+    :`<button class="btn primary" type="button" data-bxa="fill" data-id="${esc(id)}">מילוי מהמלאי</button><button class="btn" type="button" data-bxa="edit" data-id="${esc(id)}">עריכת מיקום</button>${canDo('edit')?`<button class="btn danger" type="button" data-bxa="del" data-id="${esc(id)}">מחיקת הקופסה</button>`:''}`;
+  openGen('קופסה '+b.id,`<p class="sub" style="margin:0"><span class="bx-st ${b.status}">${BOX_ST[b.status]}</span> ${esc(b.loc||'')}${b.status==='signed'?` · יצאה ${b.to?'('+esc(b.to)+') ':''}ב־${fmtDT(b.since)}`:''}</p>
+    <div><h3 style="margin:0 0 .4rem;font-size:1rem">תכולה</h3><div class="bx-comp">${comp}</div></div>
+    <div><h3 style="margin:0 0 .4rem;font-size:1rem">היסטוריה</h3><ul class="bx-tl">${(b.history||[]).slice().reverse().map(h=>`<li><time>${fmtDT(h.at)}${h.by?' · '+esc(h.by):''}</time>${esc(h.text)}</li>`).join('')}</ul></div>
+    ${acts?`<div class="dlg-actions">${acts}</div>`:''}`,'',null);
+}
+
+/* ---------- sign out (the signature itself stays on paper) ---------- */
+function bxSign(ids){
+  openGen(ids.length===1?'הוצאת קופסה '+ids[0]:`הוצאת ${ids.length} קופסאות`,`<p class="sub" style="margin:0">החתימה עצמה נעשית על הנייר. כאן רק מסמנים שהקופסה יצאה.</p>
+    <div class="field"><label for="bxTo">ליד מי / מספר טופס (לא חובה)</label><input id="bxTo" autocomplete="off" placeholder="למשל: ד״ר כהן, טופס 1234"></div>`,'יצאה חתומה',async()=>{
+    const to=$('#bxTo').value.trim(), t=Date.now();
+    for(const id of ids){ const b=Object.assign({},S.boxes[id]); if(b.status!=='vault') continue; b.status='signed'; b.to=to; b.since=t; await bxSave(b,'יצאה חתומה'+(to?' · '+to:'')); }
+    log('box-sign',{name:'קופסאות '+ids.join(', ')},ids.length,to); bx.sel.clear(); toast(ids.length===1?`קופסה ${ids[0]} יצאה`:`${ids.length} קופסאות יצאו`); renderBoxes(); return true; });
+}
+async function bxSealed(ids){
+  for(const id of ids){ const b=Object.assign({},S.boxes[id]); if(b.status!=='signed') continue; b.status='vault'; b.to=''; b.since=null; await bxSave(b,'חזרה סגורה לכספת'); }
+  bx.sel.clear(); toast(ids.length===1?`קופסה ${ids[0]} חזרה לכספת`:`${ids.length} קופסאות חזרו לכספת`); renderBoxes();
+}
+
+/* ---------- returned opened: used leaves, the rest goes back to free stock, box becomes empty ---------- */
+function bxOpened(id){
+  const b=S.boxes[id], by={}; (b.contents||[]).forEach(x=>{ (by[x.name]=by[x.name]||[]).push(x); });
+  const rows=Object.entries(by).map(([d,ls])=>{ const tot=ls.reduce((a,x)=>a+(+x.qty||0),0); const noBatch=ls.some(x=>!x.batch);
+    const tgt=noBatch?`<select data-bxt="${esc(d)}" aria-label="לאן מחזירים ${esc(d)}"><option value="">פריט חדש ב${esc(b.loc||'')}</option>${Object.values(S.items).filter(i=>i.name===d).map(i=>`<option value="${esc(i.id)}">${esc(i.loc)} · ${i.batch?'אצווה '+esc(i.batch):'ללא אצווה'} · ${fmtExp(i.exp)}</option>`).join('')}</select>`:`<span class="hint">חוזר לאצווה ${ls.map(x=>esc(x.batch)).join(', ')}</span>`;
+    return `<div class="bx-use"><label for="bu-${esc(d)}">${esc(d)} <span class="hint">(בקופסה ${tot})</span></label><input id="bu-${esc(d)}" data-bxu="${esc(d)}" data-max="${tot}" type="number" min="0" max="${tot}" value="0" inputmode="numeric">${tgt}</div>`; }).join('');
+  openGen(`קופסה ${id} חזרה פתוחה`,`<p class="sub" style="margin:0">מסמנים כמה נוצל. מה שלא נוצל חוזר למלאי החופשי, והקופסה הופכת לריקה. כך אין אף פעם קופסה חלקית.</p>
+    <div class="bx-use hd"><span>סם</span><span>נוצל</span><span>מה שלא נוצל חוזר אל</span></div>${rows}
+    <div class="field"><label for="bxNote">הערה (לא חובה)</label><input id="bxNote" autocomplete="off"></div>`,'רישום והפיכה לריקה',async err=>{
+    const used={}; let any=false;
+    for(const i of document.querySelectorAll('#genBody [data-bxu]')){ const q=parseInt(i.value,10)||0, mx=+i.dataset.max; if(q<0||q>mx){ err(`${i.dataset.bxu}: אפשר בין 0 ל־${mx}.`); return false; } used[i.dataset.bxu]=q; if(q) any=true; }
+    if(!any){ err('לא סומן שימוש. אם הקופסה חזרה סגורה, בחרו "חזרה סגורה".'); return false; }
+    const note=$('#bxNote').value.trim(), cur=S.boxes[id], tgt={};
+    document.querySelectorAll('#genBody [data-bxt]').forEach(s=>tgt[s.dataset.bxt]=s.value);
+    const kb={}; boxDrugs().concat(Object.keys(used)).forEach(d=>kb[d]=kitStockOf(d));
+    // usage: what was used leaves the kits stock
+    for(const [d,q] of Object.entries(used)){ if(!q) continue; kb[d]-=q;
+      await ledgerAdd({name:d,type:'box-use',outQty:q,balance:stockOf(d),kitBalance:kb[d],voucher:'',loc:cur.loc,note:`שימוש מקופסה ${id}${cur.to?' ('+cur.to+')':''}${note?' · '+note:''}`}); }
+    // what was not used goes back to the free stock (earliest expiry is assumed used first)
+    for(const [d,ls0] of Object.entries((cur.contents||[]).reduce((m,x)=>{ (m[x.name]=m[x.name]||[]).push(x); return m; },{}))){
+      let u=used[d]||0; const ls=ls0.slice().sort((a,b)=>(a.exp||'9999').localeCompare(b.exp||'9999'));
+      for(const x of ls){ const take=Math.min(u,+x.qty||0); u-=take; const r=(+x.qty||0)-take; if(r<=0) continue;
+        let it=tgt[d]?S.items[tgt[d]]:(x.batch?(Object.values(S.items).find(i=>i.name===d&&i.batch===x.batch&&i.loc===cur.loc)||Object.values(S.items).find(i=>i.name===d&&i.batch===x.batch))
+          :Object.values(S.items).find(i=>i.name===d&&!i.batch&&(i.exp||'')===(x.exp||'')&&i.loc===cur.loc));
+        const o=it?Object.assign({},it,{qty:(+it.qty||0)+r,updatedAt:Date.now()}):{id:uid('i'),name:d,sku:x.sku||skuOf(d),batch:x.batch||'',qty:r,loc:cur.loc||DEFAULT_LOCS[0],exp:x.exp||'',createdAt:Date.now(),updatedAt:Date.now()};
+        if(!(await put('items',o))) return false;
+        kb[d]-=r; await ledgerAdd({name:d,sku:o.sku,itemId:o.id,batch:o.batch||'',exp:o.exp||'',loc:o.loc,type:'box-return',inQty:r,balance:stockOf(d),kitBalance:kb[d],voucher:'',note:`הוחזר מקופסה ${id}`}); } }
+    const b=Object.assign({},cur,{status:'empty',contents:[],to:'',since:null});
+    await bxSave(b,`חזרה פתוחה: נוצל ${bxText(used)}. השאר הוחזר למלאי, והקופסה ריקה${note?' · '+note:''}`);
+    toast(`השימוש נרשם. קופסה ${id} ריקה וממתינה למילוי`); renderBoxes(); return true; });
+}
+
+/* ---------- fill empty boxes from the free stock (earliest expiry first) ---------- */
+function bxNeed(ids){ const n={}; ids.forEach(id=>{ const t=boxTpl(S.boxes[id].series); Object.entries(t).forEach(([d,q])=>n[d]=(n[d]||0)+q); }); return n; }
+function bxFill(ids){
+  ids=ids.filter(id=>S.boxes[id]&&S.boxes[id].status==='empty'); if(!ids.length) return toast('אין קופסאות ריקות למילוי.');
+  const need=bxNeed(ids);
+  const rows=Object.entries(need).map(([d,q])=>{ const p=bxPick(d,q); return `<tr><td>${esc(d)}</td><td class="num">${q}</td><td>${p.short?`<strong style="color:var(--bad-ink)">חסר במלאי ${p.short}</strong>`:p.out.map(x=>`${esc(x.i.batch||'ללא אצווה')} · ${esc(x.i.loc)} · ${fmtExp(x.i.exp).slice(3)} (${x.q})`).join('<br>')}</td></tr>`; }).join('');
+  openGen(ids.length===1?`מילוי קופסה ${ids[0]}`:`מילוי ${ids.length} קופסאות`,`<p class="sub" style="margin:0">כל קופסה מתמלאת לגמרי לפי התבנית. המערכת בוחרת את האצוות עם התוקף הקרוב ביותר (בלי פגי תוקף) ומורידה אותן מהמלאי החופשי.</p>
+    <div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th scope="col">סם</th><th scope="col">נדרש</th><th scope="col">יירד מ</th></tr></thead><tbody>${rows}</tbody></table></div>`,'מילוי והחזרה לכספת',async err=>{
+    const nd=bxNeed(ids); const sh=Object.entries(nd).find(([d,q])=>bxPick(d,q).short); if(sh){ err(`אין מספיק ${sh[0]} בתוקף במלאי החופשי. אפשר למלא פחות קופסאות.`); return false; }
+    for(const id of ids){ const cur=S.boxes[id], t=boxTpl(cur.series), contents=[];
+      for(const [d,q] of Object.entries(t)){ const p=bxPick(d,q); const fb0=stockOf(d), kb0=kitStockOf(d); let fb=fb0, kb=kb0;
+        for(const x of p.out){ const o=Object.assign({},x.i,{qty:(+x.i.qty||0)-x.q,updatedAt:Date.now()}); if(!(await put('items',o))) return false;
+          contents.push({name:d,sku:x.i.sku||skuOf(d),qty:x.q,batch:x.i.batch||'',exp:x.i.exp||''}); fb-=x.q; kb+=x.q;
+          await ledgerAdd({name:d,sku:o.sku,itemId:o.id,batch:o.batch||'',exp:o.exp||'',loc:o.loc,type:'box-fill',outQty:x.q,balance:fb,kitBalance:kb,voucher:'',note:`מילוי קופסה ${id}`}); } }
+      await bxSave(Object.assign({},cur,{status:'vault',contents}),'מולאה מהמלאי החופשי וחזרה לכספת'); }
+    bx.sel.clear(); toast(ids.length===1?`קופסה ${ids[0]} מולאה וחזרה לכספת`:`${ids.length} קופסאות מולאו וחזרו לכספת`); renderBoxes(); return true; });
+}
+
+/* ---------- edit location + batch/expiry of each drug ---------- */
+function bxEdit(id){
+  const b=S.boxes[id]; const lines=b.status==='empty'?[]:(b.contents||[]);
+  openGen('עריכת קופסה '+id,`<div class="field"><label for="bxEL">מיקום</label><select id="bxEL">${allLocs().map(l=>`<option value="${esc(l)}" ${l===b.loc?'selected':''}>${esc(l)}</option>`).join('')}</select></div>
+    ${lines.map((x,k)=>`<fieldset><legend>${esc(x.name)} · ${x.qty} יח׳</legend><div class="two"><div class="field"><label for="bxB${k}">אצווה</label><input id="bxB${k}" value="${esc(x.batch||'')}" list="batchList" autocomplete="off"></div>
+      <div class="field"><span style="font-weight:600" id="bxE${k}l">תוקף</span><div class="exp-pick" role="group" aria-labelledby="bxE${k}l" id="bxE${k}"></div></div></div></fieldset>`).join('')}
+    ${lines.length?'<p class="hint" style="margin:0">אם רושמים אצווה מוכרת, התוקף שלה ממולא לבד.</p>':''}`,'שמירה',async err=>{
+    const o=Object.assign({},S.boxes[id]); o.loc=$('#bxEL').value;
+    o.contents=lines.map((x,k)=>Object.assign({},x,{batch:$('#bxB'+k).value.trim(),exp:readExp('bxE'+k)||''}));
+    await bxSave(o,'עודכנו מיקום ותוקף'); toast('הקופסה עודכנה'); renderBoxes(); return true; });
+  lines.forEach((x,k)=>{ expPicker($('#bxE'+k),x.exp||'','bxE'+k); const inp=$('#bxB'+k); inp.addEventListener('change',()=>{ const kb=findBatch(inp.value); if(kb&&kb.name===x.name) setExp('bxE'+k,kb.exp); }); });
+}
+function bxMove(ids){
+  openGen(`העברת ${ids.length} קופסאות`,`<div class="field"><label for="bxML">מיקום חדש</label><select id="bxML">${allLocs().map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join('')}</select></div>`,'העברה',async()=>{
+    const l=$('#bxML').value; for(const id of ids){ const b=Object.assign({},S.boxes[id]); if(b.loc===l) continue; b.loc=l; await bxSave(b,'הועברה ל'+l); }
+    bx.sel.clear(); toast('הקופסאות הועברו'); renderBoxes(); return true; });
+}
+
+/* ---------- count boxes in the vaults ---------- */
+function bxCount(){
+  const v=boxSort(boxList().filter(b=>b.status==='vault'));
+  openGen('ספירת קופסאות בכספת',`<p class="sub" style="margin:0">מסמנים כל קופסה שנמצאת פיזית במקומה. בסוף מוצגות הקופסאות שלא נמצאו.</p>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn sm" type="button" id="bxCA">סימון הכל</button><button class="btn sm" type="button" id="bxCN">ניקוי</button></div>
+    ${allLocs().filter(l=>v.some(b=>b.loc===l)).map(l=>`<fieldset><legend>${esc(l)}</legend><div class="bx-checks">${v.filter(b=>b.loc===l).map(b=>`<label><input type="checkbox" data-bxc="${esc(b.id)}"> ${esc(b.id)}</label>`).join('')}</div></fieldset>`).join('')||'<p class="empty">אין קופסאות בכספת.</p>'}`,'סיום הספירה',async()=>{
+    const all=[...document.querySelectorAll('#genBody [data-bxc]')]; const miss=all.filter(i=>!i.checked).map(i=>i.dataset.bxc);
+    await log('box-count',{name:'ספירת קופסאות'},all.length-miss.length,miss.length?'חסרות: '+miss.join(', '):'כל הקופסאות נמצאו');
+    toast(miss.length?`חסרות ${miss.length} קופסאות: ${miss.slice(0,8).join(', ')}${miss.length>8?'...':''}`:`כל ${all.length} הקופסאות נמצאו`); return true; });
+  $('#bxCA').addEventListener('click',()=>document.querySelectorAll('#genBody [data-bxc]').forEach(i=>i.checked=true));
+  $('#bxCN').addEventListener('click',()=>document.querySelectorAll('#genBody [data-bxc]').forEach(i=>i.checked=false));
+}
+
+/* ---------- add boxes ---------- */
+function bxAdd(){
+  const sa=boxList().filter(b=>b.series==='SA').map(b=>b.n||0); const nx=Math.max(0,...sa)+1; const t=boxTpl('SA');
+  openGen('הוספת קופסאות',`<div class="bx-three"><div class="field"><label for="bxAS">סדרה</label><input id="bxAS" dir="ltr" value="SA" autocomplete="off"></div>
+    <div class="field"><label for="bxAF">ממספר</label><input id="bxAF" type="number" min="1" inputmode="numeric" value="${nx}"></div>
+    <div class="field"><label for="bxAT">עד מספר</label><input id="bxAT" type="number" min="1" inputmode="numeric" value="${nx}"></div></div>
+    <div class="field"><label for="bxAL">מיקום</label><select id="bxAL">${allLocs().map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join('')}</select></div>
+    <div class="field"><label for="bxAM">במה הקופסאות מתחילות</label><select id="bxAM"><option value="empty">ריקות (ממלאים אחר כך מהמלאי)</option><option value="fill">מלאות: למלא עכשיו מהמלאי החופשי</option><option value="built">מלאות כבר עכשיו (הכנסה ראשונה, בלי להוריד מהמלאי)</option></select></div>
+    <div id="bxABuilt" hidden><p class="hint" style="margin:0 0 .4rem">תוקף לכל סם (לא חובה). הוא יירשם בכל הקופסאות האלה, ואפשר לשנות אחר כך לכל קופסה.</p>
+      ${Object.keys(t).map((d,k)=>`<div class="field" style="margin-bottom:.5rem"><span style="font-weight:600" id="bxAE${k}l">${esc(d)} · ${t[d]} יח׳</span><div class="exp-pick" role="group" aria-labelledby="bxAE${k}l" id="bxAE${k}"></div></div>`).join('')}</div>
+    <p class="hint" id="bxAP" style="margin:0"></p>`,'הוספה',async err=>{
+    const s=$('#bxAS').value.trim().toUpperCase(), a=+$('#bxAF').value, z=+$('#bxAT').value, m=$('#bxAM').value, loc=$('#bxAL').value;
+    if(!/^[A-Z]{1,6}$/.test(s)){ err('סדרה: אותיות באנגלית בלבד, למשל SA.'); return false; }
+    if(!(a>=1&&z>=a)){ err('טווח מספרים לא תקין.'); return false; }
+    if(z-a>299){ err('אפשר להוסיף עד 300 קופסאות בפעם אחת.'); return false; }
+    const ex=[]; for(let i=a;i<=z;i++) if(S.boxes[s+i]) ex.push(s+i); if(ex.length){ err('כבר קיימות: '+ex.slice(0,6).join(', ')+(ex.length>6?'...':'')); return false; }
+    const tt=boxTpl(s); if(!S.boxtpl[s]) await put('boxtpl',{id:s,items:tt,updatedAt:Date.now()});
+    if(m==='fill'){ const n=z-a+1; const sh=Object.entries(tt).find(([d,q])=>bxPick(d,q*n).short); if(sh){ err(`אין מספיק ${sh[0]} בתוקף במלאי החופשי (צריך ${sh[1]*n}). אפשר להוסיף אותן ריקות.`); return false; } }
+    const exps=Object.keys(tt).map((d,k)=>m==='built'?readExp('bxAE'+k):'');
+    for(let i=a;i<=z;i++){ const b={id:s+i,series:s,n:i,loc,status:m==='built'?'vault':'empty',to:'',since:null,createdAt:Date.now(),
+        contents:m==='built'?Object.keys(tt).map((d,k)=>({name:d,sku:skuOf(d),qty:tt[d],batch:'',exp:exps[k]||''})):[]};
+      if(!(await bxSave(b,m==='built'?'נרשמה במערכת: מלאה בכספת':'נוספה ריקה'))) return false; }
+    const ids=[]; for(let i=a;i<=z;i++) ids.push(s+i);
+    if(m==='built'){ const n=ids.length; for(const [d,q] of Object.entries(tt)) await ledgerAdd({name:d,type:'box-open',balance:stockOf(d),kitBalance:kitStockOf(d),voucher:'',loc,note:`רישום ראשוני של ${n} קופסאות ${s}${a}–${s}${z} שכבר מלאות (${q*n} יח׳, בלי הורדה מהמלאי)`}); }
+    toast(`נוספו ${ids.length} קופסאות`); renderBoxes(); if(m==='fill') setTimeout(()=>bxFill(ids),250); return true; });
+  const upd=()=>{ const m=$('#bxAM').value, n=(+$('#bxAT').value)-(+$('#bxAF').value)+1; $('#bxABuilt').hidden=m!=='built';
+    $('#bxAP').textContent=n>0?`ייווספו ${n} קופסאות. `+({empty:'הן יתחילו ריקות.',built:'הן יירשמו כמלאות, בלי להוריד מהמלאי.',fill:'אחרי ההוספה ייפתח חלון המילוי מהמלאי.'})[m]:''; };
+  Object.keys(t).forEach((d,k)=>expPicker($('#bxAE'+k),'','bxAE'+k));
+  ['bxAM','bxAF','bxAT'].forEach(i=>{ $('#'+i).addEventListener('input',upd); $('#'+i).addEventListener('change',upd); }); upd();
+}
+
+/* ---------- template per series (applies to boxes filled from now on) ---------- */
+function bxTplEdit(){
+  const sers=[...new Set(['SA'].concat(boxList().map(b=>b.series),Object.keys(S.boxtpl)))].sort();
+  const names=[...new Set(boxDrugs().concat(DRUGS.map(d=>d[0])))];
+  const rows=s=>{ const t=boxTpl(s); return names.map((d,k)=>`<div class="bx-tpl"><label for="bxTq${k}">${esc(d)}</label><input id="bxTq${k}" data-bxq="${esc(d)}" type="number" min="0" inputmode="numeric" value="${t[d]||0}"></div>`).join(''); };
+  openGen('תבנית קופסה',`<p class="sub" style="margin:0">ממה מורכבת קופסה מלאה. שינוי חל על קופסאות שימולאו מעכשיו והלאה. קופסאות מלאות לא משתנות.</p>
+    <div class="field"><label for="bxTS">סדרה</label><select id="bxTS">${sers.map(s=>`<option>${esc(s)}</option>`).join('')}</select></div><div id="bxTR" style="display:grid;gap:.4rem">${rows(sers[0])}</div>`,'שמירה',async err=>{
+    const s=$('#bxTS').value, items={}; document.querySelectorAll('#genBody [data-bxq]').forEach(i=>{ const q=parseInt(i.value,10)||0; if(q>0) items[i.dataset.bxq]=q; });
+    if(!Object.keys(items).length){ err('קופסה צריכה לפחות סם אחד.'); return false; }
+    if(await put('boxtpl',{id:s,items,updatedAt:Date.now()})){ toast(`תבנית ${s} נשמרה`); renderBoxes(); return true; } return false; });
+  $('#bxTS').addEventListener('change',e=>{ $('#bxTR').innerHTML=rows(e.target.value); });
+}
+async function bxDelete(id){
+  const b=S.boxes[id]; if(!b||b.status!=='empty') return toast('אפשר למחוק רק קופסה ריקה.');
+  if(await confirmDlg('מחיקת קופסה',`למחוק את הקופסה ${id}? אפשר למחוק רק קופסה ריקה, ואי אפשר לבטל.`,'מחיקה')){ if(await del('boxes',id)){ log('box-delete',{name:'קופסה '+id},0,''); toast('הקופסה נמחקה'); renderBoxes(); } }
+}
+
+/* ---------- clicks ---------- */
+document.addEventListener('click',e=>{
+  if(route!=='drugkits') return;
+  const f=e.target.closest('[data-bxf]'); if(f){ bx.f=(f.classList.contains('bx-stat')&&bx.f===f.dataset.bxf)?'all':f.dataset.bxf; renderBoxes(); return; }
+  const card=e.target.closest('[data-box]'); if(card){ const id=card.dataset.box; if(bx.multi){ bx.sel.has(id)?bx.sel.delete(id):bx.sel.add(id); renderBoxes(); } else bxOpen(id); return; }
+  const t=e.target.closest('[data-bx],[data-bxa],[data-bulk]'); if(!t) return;
+  if(!bxCan()) return toast('יש לך הרשאת צפייה בלבד במסך הזה.');
+  if(t.dataset.bx){ ({multi:()=>{ bx.multi=!bx.multi; bx.sel.clear(); renderBoxes(); },fillall:()=>bxFill(boxSort(boxList().filter(b=>b.status==='empty')).map(b=>b.id)),count:bxCount,add:bxAdd,tpl:bxTplEdit})[t.dataset.bx](); return; }
+  if(t.dataset.bxa){ const id=t.dataset.id; $('#genDlg').close(); ({sign:()=>bxSign([id]),sealed:()=>bxSealed([id]),opened:()=>bxOpened(id),fill:()=>bxFill([id]),edit:()=>bxEdit(id),del:()=>bxDelete(id)})[t.dataset.bxa](); return; }
+  const ids=[...bx.sel], pick=st=>ids.filter(id=>S.boxes[id]&&S.boxes[id].status===st);
+  ({sign:()=>{ const v=pick('vault'); v.length?bxSign(v):toast('אף קופסה שנבחרה לא נמצאת בכספת.'); },sealed:()=>{ const v=pick('signed'); v.length?bxSealed(v):toast('אף קופסה שנבחרה לא חתומה.'); },
+    fill:()=>{ const v=pick('empty'); v.length?bxFill(v):toast('אף קופסה שנבחרה לא ריקה.'); },loc:()=>bxMove(ids),clear:()=>{ bx.sel.clear(); renderBoxes(); }})[t.dataset.bulk]();
+});
+
 /* ---------- actions ---------- */
 document.addEventListener('click',async e=>{
   const j=e.target.closest('[data-jump]');
@@ -1597,7 +2031,10 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
   const id=b.dataset.id, a=b.dataset.act;
   const NEED={'add-item':'edit','edit-item':'edit','del-item':'edit','add-kit':'edit','edit-kit':'edit','dup-kit':'edit','del-kit':'edit','issue-kit':'edit','return-kit':'edit','add-loc':'edit','del-loc':'edit','qty-in':'receive','qty-out':'lower','mins':'edit','backup':'edit'};
-  if(NEED[a]&&!canDo(NEED[a])){ toast('אין לך הרשאה לפעולה הזו. אפשר לבקש הרשאות בעמוד המלאי.'); return; }
+  const SIGN_ACTS=['sign-item','kit-sign','dash-sign'], VIEW_OK=['inv-csv','show-alerts','perm','req-perm'];
+  if(SIGN_ACTS.includes(a)&&!canFull('sign')){ toast('אין לך הרשאה להחתמה.'); return; }
+  if(!SIGN_ACTS.includes(a)&&!VIEW_OK.includes(a)&&!canFull(route)){ toast('יש לך הרשאת צפייה בלבד במסך הזה.'); return; }
+  if(NEED[a]&&!canDo(NEED[a])){ toast('אין לך הרשאה לפעולה הזו. פנו למנהל המערכת.'); return; }
   if(a==='kit-sign') return openKitSign(id);
   if(a==='mins') return openMins();
   if(a==='backup') return doBackup();

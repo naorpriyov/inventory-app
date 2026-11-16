@@ -25,7 +25,7 @@
   const clone = o => JSON.parse(JSON.stringify(o));
   const store = new Map();
   const listeners = new Set();
-  let since = 0, loaded = false, polling = false;
+  let since = 0, loaded = false, polling = false, access = null;
 
   function emit(l) {
     let docs = [];
@@ -55,6 +55,9 @@
     if (polling) return; polling = true;
     try {
       const j = await req('GET', API + '/changes?since=' + since);
+      // ההרשאות של המשתמש השתנו (למשל המנהל פתח או סגר לו מסך): טוענים הכול מחדש
+      if (access !== null && j.access !== access) { location.reload(); return; }
+      access = j.access;
       const touched = new Set();
       j.docs.forEach(d => { if (d.deleted) store.delete(d.path); else store.set(d.path, d.data); touched.add(parentOf(d.path)); });
       since = j.now;
@@ -136,7 +139,7 @@
   document.addEventListener('DOMContentLoaded', async () => {
     banner = document.createElement('div');
     banner.hidden = true; banner.setAttribute('role', 'status');
-    banner.style.cssText = 'position:sticky;top:0;z-index:70;background:#8A1212;color:#fff;text-align:center;padding:.45rem 1rem;font-weight:600';
+    banner.style.cssText = 'position:sticky;top:0;z-index:70;background:#BE123C;color:#fff;text-align:center;padding:.45rem 1rem;font-weight:600';
     banner.textContent = 'אין חיבור לשרת. שינויים לא יישמרו עד שהחיבור יחזור.';
     document.body.prepend(banner);
 
@@ -166,9 +169,10 @@
       const body = dlg.querySelector('#accBody');
       let j; try { j = await req('GET', API + '/admin/users'); } catch (e) { body.innerHTML = '<p class="err">לא ניתן לטעון את רשימת המשתמשים.</p>'; return; }
       const roleHe = { owner: 'מנהל', user: 'משתמש', blocked: 'חסום' };
-      body.innerHTML = `<p class="sub" style="margin:0">עובד חדש נרשם בעמוד ההרשמה עם קוד ההרשמה הזה. אחרי ההרשמה הוא שולח "בקשת הרשאות", ואת ההרשאות עצמן מגדירים בעמוד המלאי בכפתור "הרשאות משתמשים".</p>
+      body.innerHTML = `<p class="sub" style="margin:0">עובד חדש נרשם בעמוד ההרשמה עם קוד ההרשמה הזה. בקשת ההרשאות שלו מגיעה אליך אוטומטית, ואת ההרשאות עצמן מגדירים בעמוד המלאי בכפתור "הרשאות משתמשים".</p>
         <div class="invite" aria-label="קוד הרשמה">${esc(j.invite)}</div>
         <div><button type="button" class="btn sm" data-acc="invite">יצירת קוד חדש</button> <span class="hint">הקוד הקודם יפסיק לעבוד.</span></div>
+        <p class="sub" style="margin:0">${j.lastBackup ? `גיבוי אוטומטי אחרון: ${esc(new Date(j.lastBackup).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }))}. נשמרים ${esc(j.backups)} גיבויים יומיים.` : 'עוד לא נשמר גיבוי אוטומטי.'}</p>
         <h3 style="margin:.5rem 0 0;font-size:1rem">משתמשים רשומים</h3>
         <div>${j.users.map(u => `<div class="acc-row"><div><strong>${esc(u.name)}</strong><div class="meta">${esc(u.username)}, ${roleHe[u.role] || u.role}</div></div>
           <div class="acts">${u.id === m.id ? '' : `<button type="button" class="btn sm" data-acc="pw" data-id="${esc(u.id)}" data-name="${esc(u.name)}">איפוס סיסמה</button>
@@ -179,7 +183,7 @@
       const b = e.target.closest('[data-acc]'); if (!b) return;
       try {
         if (b.dataset.acc === 'invite') { await req('POST', API + '/admin/invite', {}); toast('נוצר קוד הרשמה חדש'); }
-        if (b.dataset.acc === 'pw') { const p = prompt(`סיסמה חדשה עבור ${b.dataset.name} (לפחות 8 תווים):`); if (!p) return; await req('POST', API + '/admin/users/' + b.dataset.id, { password: p }); toast('הסיסמה אופסה. מסרו אותה לעובד.'); }
+        if (b.dataset.acc === 'pw') { const p = prompt(`סיסמה חדשה עבור ${b.dataset.name} (לפחות 7 תווים):`); if (!p) return; await req('POST', API + '/admin/users/' + b.dataset.id, { password: p }); toast('הסיסמה אופסה. מסרו אותה לעובד.'); }
         if (b.dataset.acc === 'role') { await req('POST', API + '/admin/users/' + b.dataset.id, { role: b.dataset.role }); toast('החשבון עודכן'); }
         renderAccounts();
       } catch (er) { toast(er.message); }
@@ -190,7 +194,7 @@
     const pb = document.getElementById('pwBtn');
     if (pb) pb.addEventListener('click', async () => {
       const old = prompt('הסיסמה הנוכחית:'); if (!old) return;
-      const nw = prompt('סיסמה חדשה (לפחות 8 תווים):'); if (!nw) return;
+      const nw = prompt('סיסמה חדשה (לפחות 7 תווים):'); if (!nw) return;
       try { await req('POST', API + '/me/password', { old, new: nw }); toast('הסיסמה הוחלפה'); } catch (er) { toast(er.message); }
     });
   });

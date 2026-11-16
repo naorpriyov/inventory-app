@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>הדמיה: ערכות סמים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F7FB; --surface:#FFFFFF; --sunk:#EDF1F7; --ink:#0F172A; --muted:#475569; --line:#E2E8F0;
+  --accent:#2563EB; --accent-ink:#FFFFFF; --accent-soft:#DBEAFE;
+  --warn-bg:#FEF9C3; --warn-ink:#713F12; --warn-edge:#EAB308;
+  --bad-bg:#FFE4E6; --bad-ink:#9F1239; --bad-edge:#E11D48;
+  --ok-ink:#047857; --ok-bg:#D1FAE5; --focus:#1D4ED8;
+  --r:20px; --r-sm:12px; --shadow:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B1220; --surface:#121B2D; --sunk:#0E1626; --ink:#E2E8F0; --muted:#94A3B8; --line:#22304A;
+  --accent:#60A5FA; --accent-ink:#0B1220; --accent-soft:#1B2F52;
+  --warn-bg:#3A2E05; --warn-ink:#FDE68A; --warn-edge:#EAB308; --bad-bg:#3F1219; --bad-ink:#FECDD3; --bad-edge:#F43F5E;
+  --ok-ink:#86EFAC; --ok-bg:#0F3A2E; --focus:#93C5FD; --shadow:none; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1220; --surface:#121B2D; --sunk:#0E1626; --ink:#E2E8F0; --muted:#94A3B8; --line:#22304A;
+  --accent:#60A5FA; --accent-ink:#0B1220; --accent-soft:#1B2F52;
+  --warn-bg:#3A2E05; --warn-ink:#FDE68A; --warn-edge:#EAB308; --bad-bg:#3F1219; --bad-ink:#FECDD3; --bad-edge:#F43F5E;
+  --ok-ink:#86EFAC; --ok-bg:#0F3A2E; --focus:#93C5FD; --shadow:none; color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Rubik","Segoe UI",Arial,sans-serif;line-height:1.55}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
+svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.proto{background:#0F172A;color:#E2E8F0;font-size:.88rem;padding:8px 16px;text-align:center}
+.proto strong{color:#93C5FD}
+header.top{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{max-width:1180px;margin:0 auto;padding:.6rem 1.25rem;display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1.5rem}
+.brand{display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:1.1rem;margin-inline-end:auto}
+.mark{width:2.1rem;height:2.1rem;border-radius:.65rem;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+nav.tabs{display:flex;gap:.2rem;overflow-x:auto;background:var(--sunk);padding:.25rem;border-radius:.9rem;scrollbar-width:none}
+nav.tabs a{white-space:nowrap;text-decoration:none;color:var(--muted);font-weight:500;padding:.45rem .9rem;border-radius:.7rem;min-height:40px;display:flex;align-items:center}
+nav.tabs a.on{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+nav.tabs a .new{font-size:.7rem;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:0 .4rem;margin-inline-start:.35rem}
+@media (max-width:759px){nav.tabs{order:3;width:100%}}
+
+main{max-width:1180px;margin:0 auto;padding:1.4rem 1.25rem 4rem}
+.page-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:1rem;justify-content:space-between;margin-bottom:1.1rem}
+h1{font-size:1.85rem;line-height:1.2;margin:0 0 .2rem;letter-spacing:-.01em}
+h2{font-size:1.1rem;margin:0}
+.sub{color:var(--muted);margin:0}
+.acts{display:flex;gap:.5rem;flex-wrap:wrap}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-height:44px;padding:.5rem 1rem;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;white-space:nowrap;transition:transform 160ms var(--ease-out),background-color 150ms ease,filter 150ms ease}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.sm{min-height:38px;padding:.3rem .7rem;font-size:.9rem}
+.btn.warn{background:var(--warn-bg);color:var(--warn-ink);border-color:color-mix(in srgb,var(--warn-edge) 45%,transparent)}
+.btn.bad{background:var(--bad-bg);color:var(--bad-ink);border-color:color-mix(in srgb,var(--bad-edge) 40%,transparent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+@media (hover:hover) and (pointer:fine){.btn:hover{background:var(--sunk)} .btn.primary:hover{background:var(--accent);filter:brightness(1.08)}}
+label{font-weight:600;font-size:.93rem}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r-sm);padding:.55rem .75rem;min-height:44px;width:100%;transition:border-color 150ms ease,box-shadow 150ms ease}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.field{display:flex;flex-direction:column;gap:.3rem}
+.hint{font-size:.84rem;color:var(--muted);font-weight:400}
+.err{color:var(--bad-ink);font-size:.9rem;min-height:1.2em;margin:0;font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem}
+@media (max-width:560px){.two,.three{grid-template-columns:1fr}}
+
+/* tiles */
+.stats{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:.85rem;margin-bottom:1.1rem}
+.stat{border-radius:var(--r);padding:1rem 1.1rem;display:grid;gap:.4rem;align-content:start;border:0;font:inherit;text-align:start;cursor:pointer;transition:transform 160ms var(--ease-out)}
+.stat:active{transform:scale(.98)}
+.stat b{font-size:1.9rem;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-weight:500}
+.stat .ic{width:2.2rem;height:2.2rem;border-radius:.7rem;display:grid;place-items:center;background:rgba(255,255,255,.6)}
+.s-vault{grid-row:span 2;background:var(--accent);color:var(--accent-ink);align-content:space-between}
+.s-vault .ic{background:rgba(255,255,255,.18)} .s-vault b{font-size:clamp(2.6rem,6vw,3.4rem)}
+.s-doc{background:#FEF9C3;color:#854D0E} .s-refill{background:#FFE4E6;color:#BE123C} .s-all{background:#EDE9FE;color:#6D28D9} .s-units{background:#D1FAE5;color:#047857}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .s-doc{background:#3A2E05;color:#FDE68A} :root:not([data-theme="light"]) .s-refill{background:#3F1219;color:#FDA4AF} :root:not([data-theme="light"]) .s-all{background:#2A1E4A;color:#C4B5FD} :root:not([data-theme="light"]) .s-units{background:#0F3A2E;color:#6EE7B7} :root:not([data-theme="light"]) .stat:not(.s-vault) .ic{background:rgba(255,255,255,.08)}}
+.stat[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:2px}
+@media (max-width:640px){.stats{grid-template-columns:1fr 1fr;gap:.6rem}.s-vault{grid-row:auto;grid-column:span 2;display:flex;align-items:center;gap:.8rem}.s-vault span{margin-inline-start:auto}.stat b{font-size:1.6rem}}
+
+.notice{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-radius:var(--r-sm);margin-bottom:1rem;background:var(--warn-bg);color:var(--warn-ink);border:1px solid color-mix(in srgb,var(--warn-edge) 40%,transparent)}
+.notice span{flex:1}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:1rem 1.1rem;margin-bottom:1rem}
+.panel-h{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-bottom:.8rem}
+
+.toolbar{display:grid;grid-template-columns:2fr 1fr;gap:.75rem;margin-bottom:.9rem}
+@media (max-width:640px){.toolbar{grid-template-columns:1fr}}
+.seg{display:flex;flex-wrap:wrap;gap:.2rem;background:var(--sunk);padding:.25rem;border-radius:.9rem;margin-bottom:.9rem}
+.seg button{font:inherit;font-weight:500;border:0;background:transparent;color:var(--muted);padding:.4rem .85rem;border-radius:.7rem;cursor:pointer;min-height:38px;transition:transform 160ms var(--ease-out)}
+.seg button:active{transform:scale(.97)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.seg .n{font-variant-numeric:tabular-nums;opacity:.75;margin-inline-start:.3rem}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem}
+.kit{display:grid;gap:.2rem;text-align:start;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:.7rem .8rem;cursor:pointer;border-inline-start:5px solid var(--accent);transition:transform 160ms var(--ease-out),box-shadow 150ms ease}
+.kit:active{transform:scale(.97)}
+@media (hover:hover) and (pointer:fine){.kit:hover{box-shadow:0 4px 14px rgba(15,23,42,.08)}}
+.kit .num{font-weight:700;font-size:1.05rem;direction:ltr;text-align:end;font-variant-numeric:tabular-nums}
+.kit small{color:var(--muted);font-size:.8rem;line-height:1.35;min-height:2.2em}
+.kit.doctor{border-inline-start-color:var(--warn-edge)} .kit.refill{border-inline-start-color:var(--bad-edge)}
+.st{display:inline-flex;align-items:center;gap:.3rem;padding:.12rem .55rem;border-radius:999px;font-size:.78rem;font-weight:600;width:fit-content}
+.st.vault{background:var(--accent-soft);color:var(--accent)} .st.doctor{background:var(--warn-bg);color:var(--warn-ink)} .st.refill{background:var(--bad-bg);color:var(--bad-ink)}
+.empty{color:var(--muted);padding:1rem 0;margin:0}
+
+table{width:100%;border-collapse:collapse;font-size:.94rem}
+th,td{padding:.55rem .6rem;text-align:start;border-bottom:1px solid var(--line)}
+th{background:var(--sunk);font-weight:500;color:var(--muted);font-size:.85rem}
+td.n{font-variant-numeric:tabular-nums;font-weight:700}
+tbody tr:last-child td{border-bottom:0}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-sm)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media (max-width:860px){.cols{grid-template-columns:1fr}}
+.log{list-style:none;margin:0;padding:0;display:grid;gap:.4rem;max-height:320px;overflow-y:auto}
+.log li{padding:.5rem .7rem;background:var(--sunk);border-radius:var(--r-sm);font-size:.9rem}
+.log li time{display:block;color:var(--muted);font-size:.78rem}
+
+dialog{border:0;border-radius:var(--r);padding:0;max-width:min(560px,94vw);width:100%;background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog[open]{animation:dlg-in 200ms var(--ease-out)}
+@keyframes dlg-in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+dialog::backdrop{background:rgba(15,23,42,.5)}
+dialog form{padding:1.3rem;display:grid;gap:.85rem;max-height:88vh;overflow-y:auto}
+dialog h2{font-size:1.3rem}
+.dlg-actions{display:flex;gap:.6rem;flex-wrap:wrap;padding-top:.3rem}
+.comp{display:grid;gap:.35rem}
+.comp div{display:flex;justify-content:space-between;gap:.5rem;padding:.45rem .7rem;background:var(--sunk);border-radius:.6rem}
+.use-row{display:grid;grid-template-columns:1fr 110px;gap:.6rem;align-items:center}
+.sig{border:2px dashed var(--line);border-radius:var(--r-sm);background:#fff;touch-action:none;width:100%;height:170px;display:block;cursor:crosshair}
+.timeline{list-style:none;margin:0;padding:0;display:grid;gap:.35rem;max-height:220px;overflow-y:auto}
+.timeline li{font-size:.88rem;padding:.4rem .6rem;border-inline-start:3px solid var(--line)}
+.timeline li time{color:var(--muted);font-size:.78rem;display:block}
+.toast{position:fixed;bottom:1rem;inset-inline-start:50%;transform:translateX(50%) translateY(8px);background:var(--ink);color:var(--surface);padding:.7rem 1.1rem;border-radius:var(--r-sm);font-weight:600;z-index:60;opacity:0;pointer-events:none;transition:opacity 200ms ease,transform 200ms var(--ease-out);max-width:90vw;box-shadow:0 8px 24px rgba(15,23,42,.2)}
+.toast.show{opacity:1;transform:translateX(50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" x2="12" y1="22" y2="12"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-refill" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></symbol>
+  <symbol id="i-pill" viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+</svg>
+
+<div class="proto"><strong>הדמיה בלבד:</strong> הנתונים כאן לדוגמה ונשמרים רק בדף הזה. שום דבר לא נשמר בתוכנה האמיתית. נסו להחתים, להחזיר ולהשלים ערכות.</div>
+<header class="top"><div class="top-in">
+  <div class="brand"><span class="mark"><svg class="i"><use href="#i-box"/></svg></span>ניהול מלאי</div>
+  <nav class="tabs" aria-label="ניווט לדוגמה"><a href="#">לוח בקרה</a><a href="#">מלאי</a><a href="#" class="on" aria-current="page">ערכות סמים<span class="new">חדש</span></a><a href="#">החתמה</a><a href="#">ספר סמים</a><a href="#">ספירת מלאי</a><a href="#">מיקומים וערכות</a></nav>
+</div></header>
+
+<main>
+  <div class="page-head">
+    <div><h1>ערכות סמים</h1><p class="sub">ערכות סגורות וממוספרות שיוצאות לרופאים. לא נספרות במלאי החופשי.</p></div>
+    <div class="acts">
+      <button class="btn primary" type="button" id="bSign"><svg class="i"><use href="#i-pen"/></svg>החתמת רופא על ערכה</button>
+      <button class="btn" type="button" id="bAdd">+ הוספת ערכות</button>
+      <button class="btn" type="button" id="bTpl">תבנית ערכה</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <div id="alerts"></div>
+
+  <section class="panel" aria-labelledby="hKits">
+    <div class="panel-h"><h2 id="hKits">כל הערכות</h2></div>
+    <div class="seg" role="group" aria-label="סינון לפי מצב" id="seg"></div>
+    <div class="toolbar">
+      <div class="field"><label for="q">חיפוש מספר ערכה או רופא</label><input id="q" type="search" placeholder="למשל SA17 או כהן" autocomplete="off"></div>
+      <div class="field"><label for="ser">סדרה</label><select id="ser"></select></div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <div class="cols">
+    <section class="panel" aria-labelledby="hUnits">
+      <div class="panel-h"><h2 id="hUnits">כמה סמים נמצאים בערכות</h2></div>
+      <div class="tbl"><table><thead><tr><th>סם</th><th>בכספת</th><th>אצל רופאים</th><th>בערכות להשלמה</th><th>סה״כ בערכות</th></tr></thead><tbody id="units"></tbody></table></div>
+      <p class="hint" style="margin:.6rem 0 0">זה מה שיופיע בעמודה "מלאי בערכות" בספר הסמים.</p>
+    </section>
+    <section class="panel" aria-labelledby="hLog">
+      <div class="panel-h"><h2 id="hLog">רישומים שנכנסים לספר הסמים</h2></div>
+      <ul class="log" id="log"></ul>
+    </section>
+  </div>
+  <section class="panel" aria-labelledby="hStock">
+    <div class="panel-h"><h2 id="hStock">המלאי החופשי (לדוגמה)</h2><span class="hint">ההרכבה וההשלמה של ערכות מורידות מכאן</span></div>
+    <div class="tbl"><table><thead><tr><th>סם</th><th>אצווה</th><th>תוקף</th><th>כמות</th></tr></thead><tbody id="stock"></tbody></table></div>
+  </section>
+</main>
+
+<!-- kit details -->
+<dialog id="dKit" aria-labelledby="dKitT"><form method="dialog">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem"><h2 id="dKitT"></h2><span id="dKitSt"></span></div>
+  <p class="sub" id="dKitWho"></p>
+  <div><h3 style="margin:0 0 .4rem;font-size:1rem">תכולה</h3><div class="comp" id="dKitComp"></div></div>
+  <div><h3 style="margin:0 0 .4rem;font-size:1rem">היסטוריה</h3><ul class="timeline" id="dKitHist"></ul></div>
+  <div class="dlg-actions" id="dKitActs"></div>
+</form></dialog>
+
+<!-- sign -->
+<dialog id="dSign" aria-labelledby="dSignT"><form method="dialog" novalidate>
+  <h2 id="dSignT">החתמת רופא על ערכה</h2>
+  <div class="field"><label for="sKit">מספר ערכה</label><input id="sKit" list="kitsVault" dir="ltr" autocomplete="off" placeholder="SA17"><datalist id="kitsVault"></datalist><span class="hint">רק ערכות שנמצאות בכספת.</span></div>
+  <div class="field"><label for="sDoc">שם הרופא</label><input id="sDoc" list="docs" autocomplete="off"><datalist id="docs"></datalist><span class="hint">שמות שכבר הוחתמו בעבר ממולאים אוטומטית עם מספר הזהות.</span></div>
+  <div class="two">
+    <div class="field"><label for="sIdType">סוג מזהה</label><select id="sIdType"><option>מספר אישי</option><option>תעודת זהות</option></select></div>
+    <div class="field"><label for="sIdNum">מספר</label><input id="sIdNum" inputmode="numeric" dir="ltr" autocomplete="off"></div>
+  </div>
+  <div class="field"><label>חתימת הרופא</label><canvas class="sig" id="sig" aria-label="שטח חתימה"></canvas>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="hint">חותמים עם האצבע או העכבר.</span><button class="btn sm" type="button" id="sigClr">ניקוי</button></div></div>
+  <p class="err" id="sErr" role="alert"></p>
+  <div class="dlg-actions"><button class="btn primary" type="button" id="sOk">החתמה ומסירה לרופא</button><button class="btn" value="cancel">ביטול</button></div>
+</form></dialog>
+
+<!-- return opened -->
+<dialog id="dUse" aria-labelledby="dUseT"><form method="dialog" novalidate>
+  <h2 id="dUseT"></h2>
+  <p class="sub">מסמנים כמה נוצל מכל סם. הערכה תסומן "להשלמה".</p>
+  <div class="comp" id="useRows"></div>
+  <div class="field"><label for="uNote">הערה (לא חובה)</label><input id="uNote" autocomplete="off" placeholder="למשל: אירוע רב נפגעים"></div>
+  <p class="err" id="uErr" role="alert"></p>
+  <div class="dlg-actions"><button class="btn bad" type="button" id="uOk">רישום השימוש והחזרה</button><button class="btn" value="cancel">ביטול</button></div>
+</form></dialog>
+
+<!-- refill -->
+<dialog id="dRefill" aria-labelledby="dRefillT"><form method="dialog">
+  <h2 id="dRefillT"></h2>
+  <p class="sub">המערכת בוחרת את האצוות עם התוקף הקרוב ביותר ומורידה אותן מהמלאי החופשי.</p>
+  <div class="tbl"><table><thead><tr><th>סם</th><th>חסר</th><th>יירד מאצווה</th></tr></thead><tbody id="refRows"></tbody></table></div>
+  <p class="err" id="rErr" role="alert"></p>
+  <div class="dlg-actions"><button class="btn primary" type="button" id="rOk">השלמה מהמלאי והחזרה לכספת</button><button class="btn" value="cancel">ביטול</button></div>
+</form></dialog>
+
+<!-- add kits -->
+<dialog id="dAdd" aria-labelledby="dAddT"><form method="dialog" novalidate>
+  <h2 id="dAddT">הוספת ערכות</h2>
+  <div class="three">
+    <div class="field"><label for="aSer">סדרה</label><input id="aSer" dir="ltr" value="SA" autocomplete="off"></div>
+    <div class="field"><label for="aFrom">ממספר</label><input id="aFrom" type="number" min="1" inputmode="numeric"></div>
+    <div class="field"><label for="aTo">עד מספר</label><input id="aTo" type="number" min="1" inputmode="numeric"></div>
+  </div>
+  <label style="display:flex;gap:.5rem;align-items:flex-start;font-weight:500"><input type="checkbox" id="aBuilt" style="width:auto;min-height:auto;margin-top:.3rem"> <span>הערכות כבר מורכבות ונמצאות בכספת (לא להוריד שוב מהמלאי החופשי). מסמנים את זה רק בהכנסה הראשונה של ערכות קיימות.</span></label>
+  <p class="hint" id="aPreview"></p>
+  <p class="err" id="aErr" role="alert"></p>
+  <div class="dlg-actions"><button class="btn primary" type="button" id="aOk">הוספה</button><button class="btn" value="cancel">ביטול</button></div>
+</form></dialog>
+
+<!-- template -->
+<dialog id="dTpl" aria-labelledby="dTplT"><form method="dialog">
+  <h2 id="dTplT">תבנית ערכה</h2>
+  <p class="sub">ממה מורכבת כל ערכה. אפשר לקבוע תבנית שונה לכל סדרה.</p>
+  <div class="field"><label for="tSer">סדרה</label><select id="tSer"></select></div>
+  <div class="comp" id="tRows"></div>
+  <div class="dlg-actions"><button class="btn primary" type="button" id="tOk">שמירה</button><button class="btn" value="cancel">ביטול</button></div>
+</form></dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DAY=864e5, now=()=>Date.now();
+const fmt=t=>new Date(t).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const days=t=>Math.floor((now()-t)/DAY);
+const DRUGS=['קטמין 50','קטמין 500','אקטיק','מידזולם','מורפיום'];
+const STATUS={vault:'בכספת',doctor:'אצל רופא',refill:'להשלמה'};
+
+/* ---------- sample data ---------- */
+const TPL={SA:{'קטמין 50':2,'קטמין 500':1,'אקטיק':2,'מידזולם':3,'מורפיום':3}};
+TPL.SAH=Object.assign({},TPL.SA);
+const DOCS={'ד״ר דנה כהן':['מספר אישי','5123456'],'ד״ר יוסי לוי':['מספר אישי','7239914'],'ד״ר מאיה ברק':['תעודת זהות','034567891'],'ד״ר עמית שגיא':['מספר אישי','8820145']};
+const STOCK=[
+  {drug:'מורפיום',batch:'M2401',exp:'2026-12',qty:18},{drug:'מורפיום',batch:'M2512',exp:'2027-08',qty:40},
+  {drug:'מידזולם',batch:'Z2310',exp:'2027-01',qty:25},{drug:'מידזולם',batch:'Z2507',exp:'2027-11',qty:30},
+  {drug:'קטמין 50',batch:'K5-118',exp:'2027-03',qty:22},{drug:'קטמין 50',batch:'K5-140',exp:'2028-01',qty:20},
+  {drug:'קטמין 500',batch:'K50-31',exp:'2027-05',qty:9},{drug:'קטמין 500',batch:'K50-44',exp:'2028-02',qty:10},
+  {drug:'אקטיק',batch:'A8812',exp:'2027-02',qty:14},{drug:'אקטיק',batch:'A9055',exp:'2027-09',qty:16}
+];
+const LOG=[];
+const kits={};
+function addKit(series,n,hist){ const id=series+n; kits[id]={id,series,n,status:'vault',doctor:null,since:null,used:null,history:[{at:hist||now()-40*DAY,text:'הערכה נרשמה במערכת (כבר מורכבת)'}]}; return kits[id]; }
+for(let i=1;i<=100;i++) addKit('SA',i);
+for(let i=1;i<=20;i++) addKit('SAH',i);
+[['SA3','ד״ר דנה כהן',2],['SA7','ד״ר יוסי לוי',1],['SA12','ד״ר מאיה ברק',19],['SA25','ד״ר עמית שגיא',5],['SA41','ד״ר דנה כהן',0],['SAH2','ד״ר יוסי לוי',3],['SAH9','ד״ר עמית שגיא',16]]
+  .forEach(([id,d,ago])=>{ const k=kits[id]; const t=now()-ago*DAY-3600e3; k.status='doctor'; k.doctor={name:d,idType:DOCS[d][0],idNum:DOCS[d][1]}; k.since=t; k.history.push({at:t,text:`נמסרה ל${d} (חתם)`}); });
+[['SA18',{'מורפיום':2,'מידזולם':1}],['SA33',{'קטמין 50':2,'אקטיק':1}],['SAH5',{'מורפיום':1}]]
+  .forEach(([id,used])=>{ const k=kits[id]; const t=now()-2*DAY; k.status='refill'; k.used=used; k.history.push({at:t-DAY,text:'נמסרה לד״ר יוסי לוי (חתם)'},{at:t,text:'הוחזרה פתוחה: נוצל '+usedText(used)}); });
+
+/* ---------- helpers ---------- */
+function usedText(u){ return Object.entries(u).filter(([,q])=>q>0).map(([d,q])=>`${d} ${q}`).join(', ')||'כלום'; }
+function tplOf(k){ return TPL[k.series]||TPL.SA; }
+function contentsOf(k){ const t=tplOf(k), u=k.used||{}; const o={}; Object.keys(t).forEach(d=>o[d]=t[d]-(u[d]||0)); return o; }
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove('show'),3000); }
+function ledger(text){ LOG.unshift({at:now(),text}); }
+function stockOf(d){ return STOCK.filter(s=>s.drug===d).reduce((a,s)=>a+s.qty,0); }
+function pickBatches(d,qty){ const out=[]; let left=qty; STOCK.filter(s=>s.drug===d&&s.qty>0).sort((a,b)=>a.exp.localeCompare(b.exp)).forEach(s=>{ if(left<=0) return; const q=Math.min(left,s.qty); out.push({s,q}); left-=q; }); return {out,short:left}; }
+const seriesList=()=>[...new Set(Object.values(kits).map(k=>k.series))];
+const sortKits=a=>a.sort((x,y)=>x.series.localeCompare(y.series)||x.n-y.n);
+
+/* ---------- render ---------- */
+let filt='all';
+function render(){
+  const all=Object.values(kits); const c={vault:0,doctor:0,refill:0}; all.forEach(k=>c[k.status]++);
+  const unitsInKits=all.reduce((a,k)=>a+Object.values(contentsOf(k)).reduce((x,y)=>x+y,0),0);
+  $('#stats').innerHTML=[
+    ['vault','s-vault','i-lock',c.vault,'בכספת, מוכנות'],['doctor','s-doc','i-user',c.doctor,'אצל רופאים'],['refill','s-refill','i-refill',c.refill,'להשלמה'],
+    ['all','s-all','i-grid',all.length,'סה״כ ערכות'],['all','s-units','i-pill',unitsInKits,'יחידות סם בערכות']
+  ].map(([f,cl,ic,n,l],i)=>`<button type="button" class="stat ${cl}" data-f="${f}" ${i<3&&filt===f?'aria-pressed="true"':''}><span class="ic"><svg class="i"><use href="#${ic}"/></svg></span><b>${n}</b><span>${l}</span></button>`).join('');
+  const long=all.filter(k=>k.status==='doctor'&&days(k.since)>=14);
+  $('#alerts').innerHTML=long.length?`<div class="notice"><svg class="i"><use href="#i-clock"/></svg><span><strong>${long.length} ערכות אצל רופאים יותר משבועיים:</strong> ${long.map(k=>`${esc(k.id)} (${esc(k.doctor.name)}, ${days(k.since)} ימים)`).join(', ')}</span></div>`:'';
+  $('#seg').innerHTML=[['all','הכל',all.length],['vault','בכספת',c.vault],['doctor','אצל רופא',c.doctor],['refill','להשלמה',c.refill]]
+    .map(([f,l,n])=>`<button type="button" data-f="${f}" aria-pressed="${filt===f}">${l}<span class="n">${n}</span></button>`).join('');
+  const ser=$('#ser'), cur=ser.value; ser.innerHTML='<option value="">כל הסדרות</option>'+seriesList().map(s=>`<option ${s===cur?'selected':''}>${esc(s)}</option>`).join('');
+  const q=$('#q').value.trim().toLowerCase();
+  const list=sortKits(all.filter(k=>(filt==='all'||k.status===filt)&&(!ser.value||k.series===ser.value)&&(!q||k.id.toLowerCase().includes(q)||(k.doctor&&k.doctor.name.includes(q)))));
+  $('#grid').innerHTML=list.length?list.map(k=>`<button type="button" class="kit ${k.status}" data-kit="${esc(k.id)}"><span class="num">${esc(k.id)}</span><span class="st ${k.status}">${STATUS[k.status]}</span><small>${k.status==='doctor'?esc(k.doctor.name)+' · '+(days(k.since)?days(k.since)+' ימים':'היום'):k.status==='refill'?'חסר: '+esc(usedText(k.used)):'סגורה ומוכנה'}</small></button>`).join(''):'<p class="empty">אין ערכות שמתאימות לחיפוש.</p>';
+  $('#units').innerHTML=DRUGS.map(d=>{ let v=0,o=0,r=0; all.forEach(k=>{ const q=contentsOf(k)[d]||0; if(k.status==='vault') v+=q; else if(k.status==='doctor') o+=q; else r+=q; }); return `<tr><th scope="row" style="background:none;color:var(--ink);font-weight:600">${d}</th><td class="n">${v}</td><td class="n">${o}</td><td class="n">${r}</td><td class="n">${v+o+r}</td></tr>`; }).join('');
+  $('#log').innerHTML=LOG.length?LOG.slice(0,30).map(l=>`<li><time>${fmt(l.at)}</time>${esc(l.text)}</li>`).join(''):'<li>עוד אין רישומים. נסו להחתים רופא על ערכה.</li>';
+  $('#stock').innerHTML=STOCK.slice().sort((a,b)=>a.drug.localeCompare(b.drug,'he')||a.exp.localeCompare(b.exp)).map(s=>`<tr><td>${s.drug}</td><td dir="ltr" style="text-align:end">${s.batch}</td><td>${s.exp.split('-').reverse().join('/')}</td><td class="n">${s.qty}</td></tr>`).join('');
+}
+document.addEventListener('click',e=>{
+  const f=e.target.closest('[data-f]'); if(f){ filt=(f.dataset.f===filt&&f.classList.contains('stat'))?'all':f.dataset.f; render(); if(f.classList.contains('stat')) $('#hKits').scrollIntoView({behavior:'smooth',block:'start'}); return; }
+  const k=e.target.closest('[data-kit]'); if(k) openKit(k.dataset.kit);
+});
+$('#q').addEventListener('input',render); $('#ser').addEventListener('change',render);
+
+/* ---------- kit details ---------- */
+function openKit(id){
+  const k=kits[id]; $('#dKitT').textContent='ערכה '+k.id; $('#dKitSt').innerHTML=`<span class="st ${k.status}">${STATUS[k.status]}</span>`;
+  $('#dKitWho').textContent=k.status==='doctor'?`אצל ${k.doctor.name} (${k.doctor.idType} ${k.doctor.idNum}) מ־${fmt(k.since)}`:k.status==='refill'?'הוחזרה פתוחה וצריכה השלמה מהמלאי.':'סגורה ומוכנה בכספת.';
+  const c=contentsOf(k), t=tplOf(k);
+  $('#dKitComp').innerHTML=Object.keys(t).map(d=>`<div><span>${d}</span><strong>${c[d]} / ${t[d]}</strong></div>`).join('');
+  $('#dKitHist').innerHTML=k.history.slice().reverse().map(h=>`<li><time>${fmt(h.at)}</time>${esc(h.text)}</li>`).join('');
+  const A=$('#dKitActs');
+  A.innerHTML=k.status==='vault'?`<button class="btn primary" type="button" data-a="sign">החתמת רופא על הערכה</button>`
+    :k.status==='doctor'?`<button class="btn primary" type="button" data-a="sealed">הוחזרה סגורה</button><button class="btn bad" type="button" data-a="opened">הוחזרה פתוחה (נוצל)</button>`
+    :`<button class="btn primary" type="button" data-a="refill">השלמה מהמלאי</button>`;
+  A.innerHTML+='<button class="btn" value="close">סגירה</button>';
+  A.onclick=ev=>{ const b=ev.target.closest('[data-a]'); if(!b) return; $('#dKit').close();
+    ({sign:()=>openSign(k.id),sealed:()=>returnSealed(k.id),opened:()=>openUse(k.id),refill:()=>openRefill(k.id)})[b.dataset.a](); };
+  $('#dKit').showModal();
+}
+
+/* ---------- sign ---------- */
+const cv=$('#sig'); let ctx, drawing=false, inked=false;
+function sizeCanvas(){ const r=cv.getBoundingClientRect(); const dpr=window.devicePixelRatio||1; cv.width=r.width*dpr; cv.height=r.height*dpr; ctx=cv.getContext('2d'); ctx.scale(dpr,dpr); ctx.lineWidth=2.4; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#0F172A'; inked=false; }
+const pt=e=>{ const r=cv.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top]; };
+cv.addEventListener('pointerdown',e=>{ if(drawing) return; drawing=true; cv.setPointerCapture(e.pointerId); ctx.beginPath(); ctx.moveTo(...pt(e)); });
+cv.addEventListener('pointermove',e=>{ if(!drawing) return; ctx.lineTo(...pt(e)); ctx.stroke(); inked=true; });
+['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,()=>{ drawing=false; }));
+$('#sigClr').addEventListener('click',sizeCanvas);
+function openSign(pre){
+  $('#kitsVault').innerHTML=sortKits(Object.values(kits).filter(k=>k.status==='vault')).map(k=>`<option value="${k.id}">`).join('');
+  $('#docs').innerHTML=Object.keys(DOCS).map(d=>`<option value="${esc(d)}">`).join('');
+  $('#sKit').value=pre||''; $('#sDoc').value=''; $('#sIdNum').value=''; $('#sErr').textContent='';
+  $('#dSign').showModal(); sizeCanvas(); (pre?$('#sDoc'):$('#sKit')).focus();
+}
+$('#sDoc').addEventListener('input',e=>{ const d=DOCS[e.target.value]; if(d){ $('#sIdType').value=d[0]; $('#sIdNum').value=d[1]; } });
+$('#sOk').addEventListener('click',()=>{
+  const id=$('#sKit').value.trim().toUpperCase(), k=kits[id], name=$('#sDoc').value.trim(), num=$('#sIdNum').value.trim(), err=m=>$('#sErr').textContent=m;
+  if(!k) return err('לא נמצאה ערכה במספר הזה.');
+  if(k.status!=='vault') return err(`ערכה ${id} לא בכספת (${STATUS[k.status]}).`);
+  if(!name) return err('יש למלא את שם הרופא.');
+  if(!/^\d{5,9}$/.test(num)) return err('יש למלא מספר מזהה תקין (5 עד 9 ספרות).');
+  if(!inked) return err('הרופא צריך לחתום.');
+  const t=now(); k.status='doctor'; k.doctor={name,idType:$('#sIdType').value,idNum:num}; k.since=t; k.history.push({at:t,text:`נמסרה ל${name} (חתם)`});
+  DOCS[name]=[k.doctor.idType,num];
+  ledger(`ערכה ${id} נמסרה ל${name} (${k.doctor.idType} ${num}). התכולה עוברת ל"אצל רופא".`);
+  $('#dSign').close(); render(); toast(`ערכה ${id} נמסרה ל${name}`);
+});
+$('#bSign').addEventListener('click',()=>openSign(''));
+
+/* ---------- return ---------- */
+function returnSealed(id){ const k=kits[id], t=now(); k.history.push({at:t,text:`הוחזרה סגורה מ${k.doctor.name}`}); ledger(`ערכה ${id} הוחזרה סגורה מ${k.doctor.name}.`); k.status='vault'; k.doctor=null; k.since=null; render(); toast(`ערכה ${id} חזרה לכספת`); }
+let useId=null;
+function openUse(id){ useId=id; const k=kits[id], t=tplOf(k); $('#dUseT').textContent=`החזרת ערכה ${id} פתוחה`;
+  $('#useRows').innerHTML=Object.keys(t).map(d=>`<div class="use-row"><label for="u-${d}">${d} <span class="hint">(בערכה ${t[d]})</span></label><input id="u-${d}" data-u="${d}" type="number" min="0" max="${t[d]}" value="0" inputmode="numeric"></div>`).join('');
+  $('#uNote').value=''; $('#uErr').textContent=''; $('#dUse').showModal(); }
+$('#uOk').addEventListener('click',()=>{
+  const k=kits[useId], t=tplOf(k), used={}; let any=false;
+  for(const i of document.querySelectorAll('#useRows [data-u]')){ const q=parseInt(i.value,10)||0; if(q<0||q>t[i.dataset.u]) return $('#uErr').textContent=`${i.dataset.u}: אפשר בין 0 ל־${t[i.dataset.u]}.`; used[i.dataset.u]=q; if(q) any=true; }
+  if(!any) return $('#uErr').textContent='לא סומן שימוש. אם הערכה חזרה סגורה, בחרו "הוחזרה סגורה".';
+  const note=$('#uNote').value.trim(), tm=now();
+  k.history.push({at:tm,text:`הוחזרה פתוחה מ${k.doctor.name}: נוצל ${usedText(used)}${note?' · '+note:''}`});
+  ledger(`שימוש בערכה ${useId} על ידי ${k.doctor.name}: ${usedText(used)}${note?' · '+note:''}. יוצא מ"מלאי בערכות".`);
+  k.status='refill'; k.used=used; k.doctor=null; k.since=null; $('#dUse').close(); render(); toast(`השימוש נרשם. ערכה ${useId} ממתינה להשלמה`);
+});
+
+/* ---------- refill ---------- */
+let refId=null;
+function openRefill(id){ refId=id; const k=kits[id]; $('#dRefillT').textContent=`השלמת ערכה ${id}`; $('#rErr').textContent='';
+  const rows=Object.entries(k.used).filter(([,q])=>q>0).map(([d,q])=>{ const p=pickBatches(d,q); return `<tr><td>${d}</td><td class="n">${q}</td><td>${p.short?`<span style="color:var(--bad-ink);font-weight:600">חסר במלאי ${p.short}</span>`:p.out.map(x=>`${x.s.batch} (${x.q})`).join(', ')}</td></tr>`; });
+  $('#refRows').innerHTML=rows.join(''); $('#dRefill').showModal(); }
+$('#rOk').addEventListener('click',()=>{
+  const k=kits[refId]; const plan=Object.entries(k.used).filter(([,q])=>q>0).map(([d,q])=>[d,pickBatches(d,q)]);
+  const short=plan.find(([,p])=>p.short); if(short) return $('#rErr').textContent=`אין מספיק ${short[0]} במלאי החופשי.`;
+  plan.forEach(([d,p])=>p.out.forEach(x=>{ x.s.qty-=x.q; ledger(`הועבר ממלאי חופשי לערכה ${refId}: ${d} ${x.q} (אצווה ${x.s.batch}).`); }));
+  k.history.push({at:now(),text:'הושלמה מהמלאי החופשי וחזרה לכספת'}); k.status='vault'; k.used=null; $('#dRefill').close(); render(); toast(`ערכה ${refId} הושלמה וחזרה לכספת`);
+});
+
+/* ---------- add kits ---------- */
+function addPreview(){ const s=$('#aSer').value.trim().toUpperCase(), a=+$('#aFrom').value, b=+$('#aTo').value; const t=TPL[s]||TPL.SA;
+  $('#aPreview').textContent=(s&&a&&b&&b>=a)?`ייווספו ${b-a+1} ערכות: ${s}${a} עד ${s}${b}. ${$('#aBuilt').checked?'לא יירד כלום מהמלאי.':'יירדו מהמלאי: '+Object.entries(t).map(([d,q])=>`${d} ${q*(b-a+1)}`).join(', ')+'.'}`:''; }
+['input','change'].forEach(ev=>$('#dAdd').addEventListener(ev,addPreview));
+$('#bAdd').addEventListener('click',()=>{ const sa=Object.values(kits).filter(k=>k.series==='SA').map(k=>k.n); $('#aSer').value='SA'; $('#aFrom').value=Math.max(0,...sa)+1; $('#aTo').value=Math.max(0,...sa)+5; $('#aBuilt').checked=false; $('#aErr').textContent=''; addPreview(); $('#dAdd').showModal(); });
+$('#aOk').addEventListener('click',()=>{
+  const s=$('#aSer').value.trim().toUpperCase(), a=+$('#aFrom').value, b=+$('#aTo').value, built=$('#aBuilt').checked, err=m=>$('#aErr').textContent=m;
+  if(!/^[A-Z]{1,6}$/.test(s)) return err('סדרה: אותיות באנגלית בלבד, למשל SA.');
+  if(!(a>=1&&b>=a)) return err('טווח מספרים לא תקין.');
+  if(b-a>499) return err('אפשר להוסיף עד 500 ערכות בפעם אחת.');
+  const exist=[]; for(let i=a;i<=b;i++) if(kits[s+i]) exist.push(s+i); if(exist.length) return err('כבר קיימות: '+exist.slice(0,6).join(', ')+(exist.length>6?'...':''));
+  if(!TPL[s]) TPL[s]=Object.assign({},TPL.SA);
+  const n=b-a+1, t=TPL[s];
+  if(!built){ for(const [d,q] of Object.entries(t)){ if(stockOf(d)<q*n) return err(`אין מספיק ${d} במלאי החופשי (צריך ${q*n}, יש ${stockOf(d)}).`); }
+    Object.entries(t).forEach(([d,q])=>pickBatches(d,q*n).out.forEach(x=>{ x.s.qty-=x.q; })); ledger(`הורכבו ${n} ערכות ${s}${a}–${s}${b} מהמלאי החופשי: ${Object.entries(t).map(([d,q])=>`${d} ${q*n}`).join(', ')}.`); }
+  else ledger(`נרשמו ${n} ערכות קיימות ${s}${a}–${s}${b} (כבר מורכבות, בלי הורדה מהמלאי).`);
+  for(let i=a;i<=b;i++){ const k=addKit(s,i,now()); k.history=[{at:now(),text:built?'הערכה נרשמה במערכת (כבר מורכבת)':'הורכבה מהמלאי החופשי'}]; }
+  $('#dAdd').close(); render(); toast(`נוספו ${n} ערכות`);
+});
+
+/* ---------- template ---------- */
+function tplRows(){ const t=TPL[$('#tSer').value]||TPL.SA; $('#tRows').innerHTML=DRUGS.map(d=>`<div class="use-row"><label for="t-${d}">${d}</label><input id="t-${d}" data-t="${d}" type="number" min="0" value="${t[d]||0}" inputmode="numeric"></div>`).join(''); }
+$('#bTpl').addEventListener('click',()=>{ $('#tSer').innerHTML=Object.keys(TPL).map(s=>`<option>${s}</option>`).join(''); tplRows(); $('#dTpl').showModal(); });
+$('#tSer').addEventListener('change',tplRows);
+$('#tOk').addEventListener('click',()=>{ const s=$('#tSer').value, t={}; document.querySelectorAll('#tRows [data-t]').forEach(i=>{ const q=parseInt(i.value,10)||0; if(q>0) t[i.dataset.t]=q; }); TPL[s]=t; ledger(`תבנית ${s} עודכנה: ${Object.entries(t).map(([d,q])=>`${d} ${q}`).join(', ')}.`); $('#dTpl').close(); render(); toast(`תבנית ${s} נשמרה`); });
+
+render();
+</script>
+</body>
+</html>
