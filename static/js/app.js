@@ -109,7 +109,7 @@ function shellDashboard(){
   <section class="stats" id="dStats" aria-label="סיכום מלאי"></section>
   <div class="viz-wrap">
     <section class="panel viz" aria-labelledby="hUse"><div class="viz-h"><h2 id="hUse">צריכה חודשית לפי סם</h2><button class="btn sm" type="button" data-viz-table="use" id="vUseT">טבלה</button></div><p class="sub">החתמות, החתמות מערכות ושימוש מפקלים, פחות זיכויים. 6 החודשים האחרונים.</p><div id="vUse"></div></section>
-    <section class="panel viz" aria-labelledby="hWhere"><div class="viz-h"><h2 id="hWhere">איפה נמצאים הסמים</h2><button class="btn sm" type="button" data-viz-table="where" id="vWhereT">טבלה</button></div><p class="sub">יחידות במלאי החופשי מול יחידות בתוך ערכות ופקלים.</p><div id="vWhere"></div></section>
+    <section class="panel viz" aria-labelledby="hWhere"><div class="viz-h"><h2 id="hWhere">איפה נמצאים הסמים</h2><button class="btn sm" type="button" data-viz-table="where" id="vWhereT">טבלה</button></div><p class="sub">כמה יחידות מכל סם נמצאות בכל מקום: מלאי חופשי, ערכות ופקלים.</p><div id="vWhere"></div></section>
   </div>
   <div class="grid2">
     <section class="panel" aria-labelledby="hAtt"><h2 id="hAtt">דורש טיפול</h2><div id="dAtt"></div></section>
@@ -199,6 +199,14 @@ const ICONS={
   x:SVG('<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>'),
   kit:SVG('<rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>')
 };
+/* ---------- storage places shown in "where the drugs are" (fixed order = fixed colour slot) ----------
+   כדי להוסיף בעתיד מקום חדש שבונים ממנו מאגר סמים (כמו ערכות או פקלים), מוסיפים כאן שורה אחת. */
+function kitsOnlyStockOf(name){ return Object.values(S.kits).filter(k=>k.status!=='issued').reduce((t,k)=>t+(k.contents||[]).filter(c=>c.name===name).reduce((a,c)=>a+(+c.qty||0),0),0); }
+const STOCK_POOLS=[
+  {key:'free', label:'מלאי חופשי', qty:name=>stockOf(name)},
+  {key:'kits', label:'ערכות',      qty:name=>kitsOnlyStockOf(name)},
+  {key:'boxes',label:'פקלים',      qty:name=>boxStockOf(name)}
+];
 /* ---------- dashboard charts (dataviz method: single-series small multiples + 2-series stacked bars) ---------- */
 const USE_TYPES={sign:1,'kit-sign':1,'box-use':1};
 function chartDrugs(){ return DRUGS.map(d=>d[0]); }
@@ -234,14 +242,15 @@ function renderCharts(){
       return `<figure class="viz-sm"><figcaption><strong>${esc(d)}</strong><span>${total} ב־6 חודשים</span></figcaption><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="צריכה חודשית של ${esc(d)}"><line class="viz-base" x1="0" x2="${W}" y1="${base}" y2="${base}"/>${bars}</svg></figure>`; }).join('')}</div>
       <p class="hint viz-note">אותו קנה מידה לכל הסמים (עד ${tickMax} בחודש). הזמן נע מימין לשמאל: החודש הנוכחי משמאל.</p>`;
   }
-  /* 2) where the drugs are – stacked horizontal bars: free stock vs kits & boxes */
-  const rows=drugs.map(d=>({d,free:stockOf(d),kit:kitStockOf(d)})).filter(r=>r.free||r.kit);
-  const mx=Math.max(1,...rows.map(r=>r.free+r.kit));
+  /* 2) where the drugs are – one stacked bar per drug, one segment per storage place (STOCK_POOLS) */
+  const pools=STOCK_POOLS;
+  const rows=drugs.map(d=>{ const v=pools.map(p=>p.qty(d)); return {d,v,tot:v.reduce((a,b)=>a+b,0)}; }).filter(r=>r.tot);
+  const mx=Math.max(1,...rows.map(r=>r.tot));
   if(vizTable.where){
-    vw.innerHTML=rows.length?`<div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th scope="col">סם</th><th scope="col">מלאי חופשי</th><th scope="col">בערכות ובפקלים</th><th scope="col">סה״כ</th></tr></thead><tbody>${rows.map(r=>`<tr><th scope="row" style="background:none;color:var(--ink)">${esc(r.d)}</th><td class="num">${r.free}</td><td class="num">${r.kit}</td><td class="num">${r.free+r.kit}</td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">אין מלאי.</p>';
+    vw.innerHTML=rows.length?`<div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th scope="col">סם</th>${pools.map(p=>`<th scope="col">${esc(p.label)}</th>`).join('')}<th scope="col">סה״כ</th></tr></thead><tbody>${rows.map(r=>`<tr><th scope="row" style="background:none;color:var(--ink)">${esc(r.d)}</th>${r.v.map(x=>`<td class="num">${x}</td>`).join('')}<td class="num">${r.tot}</td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">אין מלאי.</p>';
   } else {
-    vw.innerHTML=`<div class="viz-legend" aria-hidden="true"><span><i class="s1"></i>מלאי חופשי</span><span><i class="s2"></i>בערכות ובפקלים</span></div>`+(rows.length?rows.map(r=>`<div class="viz-row"><span class="viz-name">${esc(r.d)}</span><div class="viz-track" role="img" aria-label="${esc(r.d)}: מלאי חופשי ${r.free}, בערכות ובפקלים ${r.kit}">
-      ${r.free?`<span class="viz-seg s1" style="width:${r.free/mx*100}%" tabindex="0" data-tip="מלאי חופשי|${r.free}|${esc(r.d)}"></span>`:''}${r.kit?`<span class="viz-seg s2" style="width:${r.kit/mx*100}%" tabindex="0" data-tip="בערכות ובפקלים|${r.kit}|${esc(r.d)}"></span>`:''}</div><span class="viz-tot">${r.free+r.kit}</span></div>`).join(''):'<p class="empty">אין מלאי.</p>');
+    vw.innerHTML=`<div class="viz-legend" aria-hidden="true">${pools.map((p,i)=>`<span><i class="s${i+1}"></i>${esc(p.label)}</span>`).join('')}</div>`+(rows.length?rows.map(r=>`<div class="viz-row"><span class="viz-name">${esc(r.d)}</span><div class="viz-track" role="img" aria-label="${esc(r.d)}: ${pools.map((p,i)=>esc(p.label)+' '+r.v[i]).join(', ')}">
+      ${r.v.map((x,i)=>x?`<span class="viz-seg s${i+1}" style="width:${x/mx*100}%" tabindex="0" data-tip="${esc(pools[i].label)}|${x}|${esc(r.d)}"></span>`:'').join('')}</div><span class="viz-tot">${r.tot}</span></div>`).join(''):'<p class="empty">אין מלאי.</p>');
   }
   $('#vUseT').textContent=vizTable.use?'גרף':'טבלה'; $('#vWhereT').textContent=vizTable.where?'גרף':'טבלה';
 }
