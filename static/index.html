@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ניהול מלאי</title>
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#2563EB">
+<meta name="theme-color" content="#F5F7FB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B1220" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ניהול מלאי">
@@ -25,14 +26,20 @@
     <button type="button" class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="menuArea"><span aria-hidden="true">☰</span>תפריט</button>
     <nav class="tabs" aria-label="ניווט ראשי">
       <a href="#dashboard" data-route="dashboard">לוח בקרה</a>
-      <a href="#inventory" data-route="inventory">מלאי <span id="navBadge" class="badge-n" hidden></span></a>
-      <a href="#drugkits" data-route="drugkits">פקלי סמים</a>
-      <a href="#sign" data-route="sign">החתמה</a>
-      <a href="#ledger" data-route="ledger">ספר סמים</a>
-      <a href="#sap" data-route="sap">השוואה לסאפ</a>
-      <a href="#count" data-route="count">ספירת מלאי</a>
-      <a href="#locations" data-route="locations">מיקומים וערכות</a>
-      <a href="#notes" data-route="notes" id="navNotes" hidden>פתקי החתמה</a>
+      <div class="ngrp" data-label="מלאי"><button type="button" class="ngrp-btn" aria-haspopup="true" aria-expanded="false"><span class="ngrp-lbl">מלאי</span><span id="navGBadge" class="badge-n" hidden></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="ngrp-pop" role="menu">
+          <a href="#inventory" data-route="inventory" data-label="מלאי">מלאי <span id="navBadge" class="badge-n" hidden></span></a>
+          <a href="#drugkits" data-route="drugkits" data-label="פקלי סמים">פקלי סמים</a>
+          <a href="#locations" data-route="locations" data-label="מיקומים וערכות">מיקומים וערכות</a>
+        </div></div>
+      <div class="ngrp" data-label="רישום"><button type="button" class="ngrp-btn" aria-haspopup="true" aria-expanded="false"><span class="ngrp-lbl">רישום</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="ngrp-pop" role="menu">
+          <a href="#sign" data-route="sign" data-label="החתמה">החתמה</a>
+          <a href="#notes" data-route="notes" id="navNotes" data-label="פתקי החתמה" hidden>פתקי החתמה</a>
+          <a href="#ledger" data-route="ledger" data-label="ספר סמים">ספר סמים</a>
+          <a href="#count" data-route="count" data-label="ספירת מלאי">ספירת מלאי</a>
+        </div></div>
+      <a href="#sap" data-route="sap" aria-label="השוואה לסאפ"><span class="lbl-l">השוואה לסאפ</span><span class="lbl-s" aria-hidden="true">סאפ</span></a>
     </nav>
     <div class="fs" id="menuArea" role="group" aria-label="גודל טקסט">
       <span aria-hidden="true">גודל טקסט</span>
@@ -58,7 +65,7 @@
       <div class="field"><label for="fBatch">אצווה</label><input id="fBatch" autocomplete="off" dir="ltr" list="batchList" aria-describedby="fBatchHint"><span class="hint" id="fBatchHint"></span></div>
     </div>
     <div class="two">
-      <div class="field" id="fQtyWrap"><label for="fQty">כמות</label><input id="fQty" type="number" min="0" step="1" inputmode="numeric" value="0"></div>
+      <div class="field" id="fQtyWrap"><label for="fQty">כמות</label><input id="fQty" name="fQty" autocomplete="off" type="number" min="0" step="1" inputmode="numeric" value="0"></div>
       <div class="field"><label for="fLoc">מיקום</label><select id="fLoc"></select></div>
     </div>
     <div class="field">
@@ -79,7 +86,7 @@
   <form id="qtyForm" novalidate>
     <h2 id="qtyTitle">הוספה למלאי</h2>
     <div class="cur" id="qtyCur"></div>
-    <div class="field"><label for="qAmt">כמות</label><input id="qAmt" type="number" min="1" step="1" inputmode="numeric" required></div>
+    <div class="field"><label for="qAmt">כמות</label><input id="qAmt" name="qAmt" autocomplete="off" type="number" min="1" step="1" inputmode="numeric" required></div>
     <div class="field"><label for="qNote">הערה <span class="hint">(לא חובה)</span></label><input id="qNote" autocomplete="off"></div>
     <div class="field"><label for="qVoucher">מס׳ שובר <span class="hint">(לא חובה)</span></label><input id="qVoucher" autocomplete="off" dir="ltr"></div>
     <div id="qRecv" style="display:grid;gap:.7rem">

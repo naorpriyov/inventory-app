@@ -72,9 +72,6 @@ nav.tabs a[aria-current="page"]{background:var(--surface);color:var(--accent);fo
 @media (max-width:759px){
   .top-in{padding:.5rem 1rem;gap:.5rem}
   .menu-btn{display:inline-flex}
-  header.top:not(.menu-open) .fs, header.top:not(.menu-open) .acct{display:none}
-  header.top.menu-open .fs, header.top.menu-open .acct{order:4;width:100%;padding:.25rem 0}
-  header.top.menu-open .acct{order:5;padding-bottom:.5rem}
   nav.tabs{scrollbar-width:none;scroll-behavior:smooth}
   nav.tabs::-webkit-scrollbar{display:none}
   nav.tabs.more-end{-webkit-mask-image:linear-gradient(to right,transparent,#000 2.5rem);mask-image:linear-gradient(to right,transparent,#000 2.5rem)}
@@ -325,3 +322,123 @@ legend{font-weight:700;padding:0 .4rem}
 .sap-line .exp-pick{grid-template-columns:1fr 1fr;gap:.3rem}
 .sap-line select,.sap-line input{min-height:40px;padding:.4rem .5rem}
 @media (max-width:640px){.sap-line{grid-template-columns:1fr 1fr;padding:.6rem;background:var(--sunk);border-radius:var(--r-sm)}.sap-line .exp-pick{grid-column:1/-1}.sap-line.hd{display:none}}
+
+/* ===================== redesign (apple-design + web-interface-guidelines) ===================== */
+/* instant response: no 300ms tap delay */
+a,button,input,select,textarea,label,summary,[data-box]{touch-action:manipulation}
+html{-webkit-tap-highlight-color:transparent}
+
+/* typography: tracking and leading by size, balanced headings */
+h1{letter-spacing:-.02em;line-height:1.15;text-wrap:balance}
+h2,h3{letter-spacing:-.01em;line-height:1.25;text-wrap:balance}
+
+/* translucent "material" header; content scrolls underneath. Solid when transparency or extra contrast is requested */
+header.top{background:color-mix(in srgb,var(--surface) 76%,transparent);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border-bottom-color:transparent;box-shadow:0 1px 0 color-mix(in srgb,var(--line) 75%,transparent)}
+@media (prefers-reduced-transparency:reduce){header.top{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media (prefers-contrast:more){header.top{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 1px 0 var(--ink)}}
+.menu-btn{display:none!important}
+
+/* grouped navigation */
+nav.tabs{overflow:visible;align-items:center}
+.ngrp{position:relative;display:flex}
+.ngrp-btn{display:flex;align-items:center;gap:.35rem;padding:.5rem .8rem;border-radius:.7rem;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:500;white-space:nowrap;min-height:42px;cursor:pointer;transition:color 150ms ease,background-color 150ms ease,transform 120ms var(--ease-out)}
+.ngrp-btn:active{transform:scale(.97)}
+@media (hover:hover) and (pointer:fine){.ngrp-btn:hover{color:var(--ink)}}
+.ngrp.on>.ngrp-btn{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.chev{width:1rem;height:1rem;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform 200ms var(--ease-out)}
+.ngrp.open .chev,.more.open .chev,.acct.open .chev{transform:rotate(180deg)}
+
+/* popovers: a light material that grows from its trigger (origin = trigger corner), never from the centre */
+.ngrp-pop,.more-pop,.um-pop{position:absolute;top:calc(100% + 8px);z-index:40;display:grid;gap:2px;padding:6px;min-width:220px;border-radius:16px;
+  background:color-mix(in srgb,var(--surface) 97%,transparent);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);
+  box-shadow:0 14px 36px rgba(15,23,42,.18),0 0 0 1px color-mix(in srgb,var(--line) 85%,transparent);
+  opacity:0;visibility:hidden;transform:scale(.95);filter:blur(2px);pointer-events:none;overscroll-behavior:contain;
+  transition:opacity 160ms ease-out,transform 220ms var(--ease-out),filter 160ms ease-out,visibility 0s linear 220ms}
+.ngrp-pop,.more-pop{inset-inline-start:0;transform-origin:top right}
+.um-pop{inset-inline-end:0;transform-origin:top left}
+.ngrp.open .ngrp-pop,.more.open .more-pop,.acct.open .um-pop{opacity:1;visibility:visible;transform:none;filter:none;pointer-events:auto;transition-delay:0s}
+@media (prefers-reduced-motion:reduce){.ngrp-pop,.more-pop,.um-pop{transform:none!important;filter:none!important;transition:opacity 150ms ease,visibility 0s linear 150ms}}
+@media (prefers-reduced-transparency:reduce){.ngrp-pop,.more-pop,.um-pop{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}}
+.ngrp-pop a{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.6rem .8rem;border-radius:10px;color:var(--ink);text-decoration:none;font-weight:500;min-height:44px}
+.ngrp-pop a[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+@media (hover:hover) and (pointer:fine){.ngrp-pop a:not([aria-current]):hover{background:var(--sunk)}}
+
+/* one main action per screen + "more" */
+.head-acts{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.more{position:relative}
+.more-btn .chev{margin-inline-start:-.1rem}
+.more-pop .btn{width:100%;justify-content:flex-start;border:0;background:transparent;font-weight:500;min-height:44px;border-radius:10px}
+@media (hover:hover) and (pointer:fine){.more-pop .btn:hover{background:var(--sunk)}}
+.page-head .more-pop{inset-inline-start:auto;inset-inline-end:0;transform-origin:top left}
+
+/* user menu */
+.acct{position:relative;display:flex;align-items:center}
+.um-btn{display:inline-flex;align-items:center;gap:.5rem;min-height:42px;padding:.25rem .35rem .25rem .7rem;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;transition:transform 120ms var(--ease-out),background-color 150ms ease}
+.um-btn:active{transform:scale(.97)}
+@media (hover:hover) and (pointer:fine){.um-btn:hover{background:var(--sunk)}}
+.um-av{width:1.9rem;height:1.9rem;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:.95rem}
+.um-btn .who{color:var(--ink);font-weight:600;max-width:12rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.um-head{display:grid;padding:.5rem .8rem .6rem;border-bottom:1px solid var(--line);margin-bottom:4px}
+.um-head span{color:var(--muted);font-size:.85rem}
+.um-item{display:flex;align-items:center;width:100%;min-height:44px;padding:.55rem .8rem;border:0;border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-weight:500;text-align:start;text-decoration:none;cursor:pointer}
+.um-item.danger{color:var(--bad-ink)}
+@media (hover:hover) and (pointer:fine){.um-item:hover{background:var(--sunk)}}
+.um-fs{padding:.4rem .8rem;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:4px 0}
+.um-fs .fs{justify-content:space-between}
+@media (max-width:759px){
+  .um-btn .who{display:none}
+  .um-btn{padding:.2rem .3rem}
+  .top-in{padding:.5rem .9rem}
+  nav.tabs{justify-content:space-between}
+  nav.tabs>a,.ngrp-btn{padding:.45rem .6rem;font-size:.93rem}
+  /* on a phone the menus open as a full-width sheet under the header */
+  .ngrp-pop{position:fixed;top:auto;margin-top:46px;inset-inline:12px;min-width:0;transform-origin:top center}
+}
+
+/* dashboard: one "today" list instead of stacked banners */
+.rem{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:1.25rem;overflow:hidden}
+.rem:empty{display:none}
+.todo-h{display:flex;align-items:center;gap:.5rem;font-size:1.05rem;margin:0;padding:.85rem 1.1rem .6rem}
+.todo-n{min-width:1.5rem;height:1.5rem;padding:0 .4rem;border-radius:999px;background:var(--bad-edge);color:#fff;font-size:.8rem;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
+#dRem .notice{display:flex;align-items:center;gap:.75rem;margin:0;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent;color:var(--ink);padding:.75rem 1.1rem;font-size:.95rem}
+.rem .notice::before{content:"";flex:none;width:.6rem;height:.6rem;border-radius:50%;background:var(--accent)}
+.rem .notice.warn::before{background:var(--warn-edge)} .rem .notice.bad::before{background:var(--bad-edge)} .rem .notice.ok-n::before{background:var(--ok-ink)}
+.rem .notice span{flex:1}
+#dHero{display:none}
+
+/* inventory table becomes cards on a phone */
+@media (max-width:640px){
+  .inv-cards thead{display:none}
+  .inv-cards,.inv-cards tbody{display:block}
+  .inv-cards tr{display:grid;grid-template-columns:1fr 1fr;gap:.2rem .9rem;padding:.85rem .95rem;border-bottom:1px solid var(--line)}
+  .inv-cards tr:last-child{border-bottom:0}
+  .inv-cards tr th[scope="row"]{grid-column:1/-1;padding:0 0 .2rem;border:0;font-size:1.05rem}
+  .inv-cards td{display:flex;justify-content:space-between;gap:.5rem;padding:.12rem 0;border:0;font-size:.9rem;background:transparent!important;color:inherit!important;box-shadow:none!important;text-align:start}
+  .inv-cards td[data-label]::before{content:attr(data-label);color:var(--muted);font-weight:500}
+  .inv-cards td.acts-cell{grid-column:1/-1;padding-top:.55rem}
+  .inv-cards td.acts-cell .row-act{flex-wrap:wrap}
+  .inv-cards tr.soon{background:var(--warn-bg)} .inv-cards tr.expired{background:var(--bad-bg)}
+  .tbl-wrap:has(.inv-cards){overflow-x:visible}
+}
+
+/* dialogs: dim to focus, materialize (scale + opacity) from the centre, contain scroll */
+dialog form{overscroll-behavior:contain}
+dialog[open]{animation:dlg-in 220ms var(--ease-out)}
+@keyframes dlg-in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){dialog[open]{animation:dlg-fade 150ms ease}@keyframes dlg-fade{from{opacity:0}to{opacity:1}}}
+
+/* long lists (120+ boxes): skip rendering what is off-screen */
+.bx-box{content-visibility:auto;contain-intrinsic-size:auto 96px}
+
+/* batch trace */
+.trace h3{font-size:1rem;margin:1rem 0 .4rem}
+.trace-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin:.8rem 0}
+.trace-kpis div{background:var(--sunk);border-radius:var(--r-sm);padding:.55rem .7rem;font-size:.85rem;color:var(--muted)}
+.trace-kpis b{display:block;font-size:1.4rem;color:var(--ink);font-variant-numeric:tabular-nums}
+@media (max-width:560px){.trace-kpis{grid-template-columns:1fr 1fr}}
+.trace-sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px}
+.trace-sign div{border-top:1px solid var(--ink);padding-top:6px;font-size:.85rem}
+#genDlg:has(.trace){max-width:min(980px,96vw)}
+
+.lbl-s{display:none}
+@media (max-width:759px){.lbl-l{display:none}.lbl-s{display:inline}}

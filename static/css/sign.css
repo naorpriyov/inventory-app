@@ -88,6 +88,7 @@ body.no-sign main [data-act="sign-item"],body.no-sign main [data-act="kit-sign"]
 .sg-req::after{content:" *";color:var(--bad-edge)}
 .sg-in{width:100%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:.6rem;padding:.65rem .75rem;font:inherit}
 .sg-in:focus{border-color:var(--accent);outline:none}
+.sg-in:focus-visible{box-shadow:0 0 0 3px var(--accent-soft)}
 .sg-in.bad{border-color:var(--bad-edge)}
 .sg-err{color:var(--bad-ink);font-size:.88rem;margin-top:4px}
 .sg-row{display:flex;gap:10px}.sg-row>*{flex:1;min-width:0}

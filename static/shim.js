@@ -154,8 +154,19 @@
     const top = document.querySelector('.top-in');
     if (top) {
       const box = document.createElement('div'); box.className = 'acct';
-      box.innerHTML = `<span class="who">${esc(m.name)}</span>${m.isOwner ? '<button type="button" class="btn sm" id="acctBtn">חשבונות משתמשים</button>' : ''}<button type="button" class="btn sm" id="pushBtn">התראות</button><button type="button" class="btn sm" id="pwBtn">שינוי סיסמה</button><a class="btn sm" href="/logout">יציאה</a>`;
+      const chev = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+      box.innerHTML = `<button type="button" class="um-btn" id="umBtn" aria-haspopup="true" aria-expanded="false" aria-controls="umPop" aria-label="תפריט חשבון: ${esc(m.name)}"><span class="um-av" aria-hidden="true">${esc((m.name || '?').trim().charAt(0))}</span><span class="who">${esc(m.name)}</span>${chev}</button>
+        <div class="um-pop" id="umPop" role="menu"><div class="um-head"><strong>${esc(m.name)}</strong><span>${m.isOwner ? 'מנהל המערכת' : 'משתמש'}</span></div>
+        ${m.isOwner ? '<button type="button" class="um-item" id="acctBtn">חשבונות משתמשים ויומן ביקורת</button>' : ''}<button type="button" class="um-item" id="pushBtn">התראות לטלפון</button><button type="button" class="um-item" id="pwBtn">שינוי סיסמה</button>
+        <div class="um-fs"></div><a class="um-item danger" href="/logout">יציאה</a></div>`;
       top.appendChild(box);
+      const fsCtl = document.querySelector('.fs'); if (fsCtl) box.querySelector('.um-fs').appendChild(fsCtl);
+      const umBtn = box.querySelector('#umBtn');
+      umBtn.addEventListener('click', () => { const open = !box.classList.contains('open');
+        document.querySelectorAll('.ngrp.open,.more.open').forEach(x => x.classList.remove('open'));
+        box.classList.toggle('open', open); umBtn.setAttribute('aria-expanded', String(open)); });
+      box.querySelector('#umPop').addEventListener('click', e => { if (e.target.closest('.um-item')) { box.classList.remove('open'); umBtn.setAttribute('aria-expanded', 'false'); } });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && box.classList.contains('open')) { box.classList.remove('open'); umBtn.setAttribute('aria-expanded', 'false'); umBtn.focus(); } });
     }
 
     const dlg = document.createElement('dialog');

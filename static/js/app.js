@@ -102,7 +102,7 @@ function shellDashboard(){
   const d=new Date().toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   $('#main').innerHTML=`
   <div class="page-head"><div><h1>לוח בקרה</h1><p class="sub">${esc(d)}</p></div>
-  <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn primary" data-act="add-item">+ הוספת פריט</button><button class="btn" data-act="add-kit">+ הוספת ערכה</button><button class="btn" data-act="mins">מינימום מלאי</button><button class="btn" data-act="backup">גיבוי</button></div></div>
+  <div class="head-acts"><button class="btn primary" data-act="add-item">+ הוספת פריט</button><div class="more"><button type="button" class="btn more-btn" aria-haspopup="true" aria-expanded="false">עוד <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="more-pop" role="menu"><button class="btn" data-act="add-kit">+ הוספת ערכה</button><button class="btn" data-act="mins">מינימום מלאי</button><button class="btn" data-act="backup">גיבוי</button><button class="btn" type="button" data-trace>איתור אצווה (ריקול)</button></div></div></div></div>
   <div id="notice"></div>
   <section class="rem" id="dRem" aria-live="polite"></section>
   <section id="dHero" aria-live="polite"></section>
@@ -112,7 +112,7 @@ function shellDashboard(){
     <section class="panel viz" aria-labelledby="hWhere"><div class="viz-h"><h2 id="hWhere">איפה נמצאים הסמים</h2><button class="btn sm" type="button" data-viz-table="where" id="vWhereT">טבלה</button></div><p class="sub">כמה יחידות מכל סם נמצאות בכל מקום: מלאי חופשי, ערכות ופקלים.</p><div id="vWhere"></div></section>
   </div>
   <div class="grid2">
-    <section class="panel" aria-labelledby="hAtt"><h2 id="hAtt">דורש טיפול</h2><div id="dAtt"></div></section>
+    <section class="panel" aria-labelledby="hAtt"><h2 id="hAtt">פריטים שפג תוקפם או פגים החודש</h2><div id="dAtt"></div></section>
     <section class="panel" aria-labelledby="hLocs" style="grid-column:1/-1;order:-1"><h2 id="hLocs">סיכום כמויות לפי סם ומיקום <a href="#locations" class="btn sm">לכל המיקומים</a></h2><div id="dLocs"></div></section>
     <section class="panel" aria-labelledby="hNext"><h2 id="hNext">פגים בחודש הבא</h2><div id="dNext"></div></section>
     <section class="panel" aria-labelledby="hMoves"><h2 id="hMoves">תנועות אחרונות</h2><div id="dMoves"></div></section>
@@ -121,7 +121,7 @@ function shellDashboard(){
 function shellInventory(){
   $('#main').innerHTML=`
   <div class="page-head"><div><h1>מלאי</h1><p class="sub">כל הפריטים, עם הוספה והורדה של כמויות.</p></div>
-  <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn" data-act="inv-csv">ייצוא ל־CSV</button><button class="btn" data-act="perm" id="permBtn" hidden>הרשאות משתמשים</button><button class="btn" data-act="req-perm" id="reqBtn" hidden>בקשת הרשאות</button><button class="btn primary" data-act="add-item">+ הוספת פריט</button></div></div>
+  <div class="head-acts"><button class="btn primary" data-act="add-item">+ הוספת פריט</button><button class="btn" data-act="perm" id="permBtn" hidden>הרשאות משתמשים</button><button class="btn" data-act="req-perm" id="reqBtn" hidden>בקשת הרשאות</button><div class="more"><button type="button" class="btn more-btn" aria-haspopup="true" aria-expanded="false">עוד <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="more-pop" role="menu"><button class="btn" data-act="inv-csv">ייצוא ל־CSV</button><button class="btn" type="button" data-trace>איתור אצווה (ריקול)</button></div></div></div></div>
   <div id="notice"></div>
   <div class="toolbar" role="search" id="iTools">
     <div class="field"><label for="iq">חיפוש</label><input id="iq" type="search" placeholder="שם, מק״ט או אצווה" value="${esc(inv.q)}"></div>
@@ -303,8 +303,8 @@ function renderDashboard(){
 }
 function itemRow(i,showLoc){
   const s=status(i.exp);
-  return `<tr class="${s}"><th scope="row" style="background:inherit;color:inherit;font-size:1rem;font-weight:700">${esc(i.name)}</th><td class="code">${esc(i.sku)}</td><td class="code">${esc(i.batch)||'—'}</td><td class="num">${esc(i.qty)}</td><td class="code">${fmtExp(i.exp)}</td>${showLoc?`<td>${esc(i.loc)}</td>`:''}<td>${PILL[s]}</td>
-  <td><div class="row-act">
+  return `<tr class="${s}"><th scope="row" style="background:inherit;color:inherit;font-size:1rem;font-weight:700">${esc(i.name)}</th><td class="code" data-label="מק״ט">${esc(i.sku)}</td><td class="code" data-label="אצווה">${esc(i.batch)||'—'}</td><td class="num" data-label="כמות">${esc(i.qty)}</td><td class="code" data-label="תוקף">${fmtExp(i.exp)}</td>${showLoc?`<td data-label="מיקום">${esc(i.loc)}</td>`:''}<td data-label="סטטוס">${PILL[s]}</td>
+  <td class="acts-cell"><div class="row-act">
     ${canDo('receive')?`<button class="btn sm in" data-act="qty-in" data-id="${i.id}" aria-label="הוספת כמות ל${esc(i.name)}">+ הוספה</button>`:''}
     <button class="btn sm primary" data-act="sign-item" data-id="${i.id}" aria-label="החתמה על ${esc(i.name)}" ${(+i.qty||0)<=0?'disabled':''}>✍ החתמה</button>
     ${canLower()?`<button class="btn sm out" data-act="qty-out" data-id="${i.id}" aria-label="הורדת כמות מ${esc(i.name)}" ${(+i.qty||0)<=0?'disabled':''}>− הורדה</button>`:''}
@@ -313,7 +313,7 @@ function itemRow(i,showLoc){
   </div></td></tr>`;
 }
 function itemTable(rows,showLoc,caption){
-  return `<table><caption class="sr">${esc(caption)}</caption><thead><tr><th scope="col">פריט</th><th scope="col">מק״ט</th><th scope="col">אצווה</th><th scope="col">כמות</th><th scope="col">תאריך תפוגה</th>${showLoc?'<th scope="col">מיקום</th>':''}<th scope="col">סטטוס</th><th scope="col">פעולות</th></tr></thead><tbody>${rows.map(r=>itemRow(r,showLoc)).join('')}</tbody></table>`;
+  return `<table class="inv-cards"><caption class="sr">${esc(caption)}</caption><thead><tr><th scope="col">פריט</th><th scope="col">מק״ט</th><th scope="col">אצווה</th><th scope="col">כמות</th><th scope="col">תאריך תפוגה</th>${showLoc?'<th scope="col">מיקום</th>':''}<th scope="col">סטטוס</th><th scope="col">פעולות</th></tr></thead><tbody>${rows.map(r=>itemRow(r,showLoc)).join('')}</tbody></table>`;
 }
 function sortItems(a,by){
   const f={exp:(x,y)=>rank(status(x.exp))-rank(status(y.exp))||(x.exp||'9').localeCompare(y.exp||'9')||x.name.localeCompare(y.name,'he'),
@@ -376,6 +376,7 @@ function renderData(){
   const dl=$('#batchList'); if(dl) dl.innerHTML=[...knownBatches().values()].map(b=>`<option value="${esc(b.batch)}">${esc(b.name)}, ${fmtExp(b.exp)}</option>`).join('');
   const c=counts(); const n=c.soon+c.expired; const b=$('#navBadge');
   b.hidden=!n; b.textContent=n; b.setAttribute('aria-label',`${n} התראות תוקף`);
+  const gb=$('#navGBadge'); if(gb){ gb.hidden=!n; gb.textContent=n; gb.setAttribute('aria-label',`${n} התראות תוקף`); }
   updatePermButtons();
   if(applyAccess()===false) return;
   if(route==='dashboard'){ renderDashboard(); renderCharts(); }
@@ -408,7 +409,7 @@ function tabLevel(t){
 const canSee=t=>tabLevel(t)!=='none', canFull=t=>tabLevel(t)==='full';
 const firstTab=()=>{ const t=TABS.find(([k])=>canSee(k)); return t?t[0]:null; };
 function applyAccess(){
-  document.querySelectorAll('nav.tabs a[data-route]').forEach(a=>{ if(a.dataset.route!=='notes') a.hidden=!canSee(a.dataset.route); });
+  document.querySelectorAll('nav.tabs a[data-route]').forEach(a=>{ if(a.dataset.route!=='notes') a.hidden=!canSee(a.dataset.route); }); navGroups();
   document.body.classList.toggle('ro',route!=='noaccess'&&tabLevel(route)==='view');
   document.body.classList.toggle('no-sign',!canFull('sign'));
   if(accessReady()&&!me.isOwner){ const ok=route==='noaccess'?!firstTab():canSee(route); if(!ok){ go(); return false; } }
@@ -819,6 +820,7 @@ function unreconciled(){
 }
 function renderReminders(){
   const el=$('#dRem'); if(!el||mode==='loading') return; const out=[]; const m=metaDoc();
+  { const c=counts(); if(c.expired||c.soon) out.push(`<div class="notice bad"><span><strong>${[c.expired?c.expired+' פגי תוקף':'',c.soon?c.soon+' פגים החודש':''].filter(Boolean).join(', ')}</strong> (פריטים וערכות).</span><button class="btn sm" type="button" data-act="show-alerts">הצגה במלאי</button></div>`); }
   const lc=lastCountAt(), d=lc?Math.floor((Date.now()-lc)/864e5):null;
   if(d===null||d>=14) out.push(`<div class="notice warn"><span>${lc?`עברו ${d} ימים מספירת המלאי האחרונה.`:'עוד לא בוצעה ספירת מלאי.'} הספירה מתבצעת כל שבועיים.</span><a class="btn sm" href="#count">לספירת מלאי</a></div>`);
   const lr=m.lastReport||0, dr=lr?Math.floor((Date.now()-lr)/864e5):null;
@@ -830,7 +832,7 @@ function renderReminders(){
     if(rc) out.push(`<div class="notice"><span><strong>התקבלו ${rc} יח׳ מאז עדכון סאפ האחרון.</strong> אחרי שהמשלוח נקלט בסאפ, עדכנו את מלאי סאפ.</span><a class="btn sm" href="#sap">להשוואה לסאפ</a></div>`); }
   if(canSee('drugkits')){ const bs=Object.values(S.boxes), em=bs.filter(b=>b.status==='empty').length, lg=bs.filter(b=>b.status==='signed'&&bxDays(b.since)>=14).length;
     if(em||lg) out.push(`<div class="notice"><span><strong>פקלי סמים:</strong> ${[em?em+' קופסאות ריקות ממתינות למילוי':'',lg?lg+' קופסאות חתומות יותר משבועיים':''].filter(Boolean).join(', ')}.</span><a class="btn sm" href="#drugkits">לפקלי סמים</a></div>`); }
-  el.innerHTML=out.join('');
+  el.innerHTML=`<h2 class="todo-h">מה דורש טיפול היום${out.length?` <span class="todo-n">${out.length}</span>`:''}</h2>`+(out.length?out.join(''):'<div class="notice ok-n"><span>הכול תקין. אין משימות פתוחות.</span></div>');
 }
 document.addEventListener('click',async e=>{ if(!e.target.closest('[data-recon-all]')) return; if(!canFull('dashboard')) return toast('יש לך הרשאת צפייה בלבד במסך הזה.'); for(const n of unreconciled()) await put('recon',{id:'r'+n.ts,ts:n.ts,at:Date.now()}); toast('הפתקים סומנו כטופלו'); renderReminders(); });
 
@@ -865,7 +867,7 @@ const lgNote=l=>(TYPE_HE[l.type]||l.type)+(l.loc?' · '+l.loc:'')+(l.batch?' · 
 function shellLedger(){
   $('#main').innerHTML=`
   <div class="page-head"><div><h1>ספר סמים</h1><p class="sub">מעקב הכנסה, הוצאה וספירת סמים לכל פריט, לפי נספח ב׳.</p></div>
-  <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn" type="button" id="lgRep">דוח חודשי</button><button class="btn" type="button" id="lgCsv">ייצוא הפריט ל־CSV</button><button class="btn primary" type="button" id="lgBi">דוח דו־שבועי לכל הסמים</button></div></div>
+  <div class="head-acts"><button class="btn primary" type="button" id="lgBi">דוח דו־שבועי לכל הסמים</button><div class="more"><button type="button" class="btn more-btn" aria-haspopup="true" aria-expanded="false">עוד <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="more-pop" role="menu"><button class="btn" type="button" id="lgRep">דוח חודשי</button><button class="btn" type="button" id="lgCsv">ייצוא הפריט ל־CSV</button><button class="btn" type="button" data-trace>איתור אצווה (ריקול)</button></div></div></div></div>
   <div id="notice"></div>
   <div class="toolbar" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
     <div class="field"><label for="lgD">שם פריט</label><select id="lgD"></select></div>
@@ -983,7 +985,7 @@ function go(){
   else if(r==='noaccess') r='dashboard';
   const changed=r!==route||!$('#main').children.length; route=r;
   document.querySelectorAll('nav.tabs a').forEach(a=>{ if(a.dataset.route===r){ a.setAttribute('aria-current','page'); revealTab(a); } else a.removeAttribute('aria-current'); });
-  closeMenu();
+  closeMenu(); navGroups(); closePops();
   if(changed){ ({dashboard:shellDashboard,inventory:shellInventory,drugkits:shellDrugkits,sap:shellSap,locations:shellLocations,notes:shellNotes,sign:shellSign,ledger:shellLedger,count:shellCount,noaccess:shellNoAccess})[r](); renderData(); }
   else applyAccess();
   if(r==='sign'&&signPrefill) applyPrefill();
@@ -1249,12 +1251,9 @@ const bxCan=()=>canFull('drugkits');
 function shellDrugkits(){
   $('#main').innerHTML=`
   <div class="page-head"><div><h1>פקלי סמים</h1><p class="sub">קופסאות סגורות וממוספרות. כל קופסה מלאה בכספת, חתומה אצל רופא, או ריקה.</p></div>
-  <div class="bx-acts" id="bxActs" style="display:flex;gap:.5rem;flex-wrap:wrap">
+  <div class="head-acts" id="bxActs">
     <button class="btn primary" type="button" data-bx="multi" id="bxMulti">בחירת כמה קופסאות</button>
-    <button class="btn" type="button" data-bx="fillall">מילוי כל הריקות</button>
-    <button class="btn" type="button" data-bx="count">ספירת קופסאות בכספת</button>
-    <button class="btn" type="button" data-bx="add">+ הוספת קופסאות</button>
-    <button class="btn" type="button" data-bx="tpl">תבנית</button></div></div>
+    <div class="more"><button type="button" class="btn more-btn" aria-haspopup="true" aria-expanded="false">עוד <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="more-pop" role="menu"><button class="btn" type="button" data-bx="fillall">מילוי כל הריקות</button><button class="btn" type="button" data-bx="count">ספירת קופסאות בכספת</button><button class="btn" type="button" data-bx="add">+ הוספת קופסאות</button><button class="btn" type="button" data-bx="tpl">תבנית</button></div></div></div></div>
   <div id="notice"></div>
   <div class="bx-stats" id="bxStats"></div>
   <div id="bxAlerts"></div>
@@ -1424,7 +1423,7 @@ function bxCount(){
     ${allLocs().filter(l=>v.some(b=>b.loc===l)).map(l=>`<fieldset><legend>${esc(l)}</legend><div class="bx-checks">${v.filter(b=>b.loc===l).map(b=>`<label><input type="checkbox" data-bxc="${esc(b.id)}"> ${esc(b.id)}</label>`).join('')}</div></fieldset>`).join('')||'<p class="empty">אין קופסאות בכספת.</p>'}`,'סיום הספירה',async()=>{
     const all=[...document.querySelectorAll('#genBody [data-bxc]')]; const miss=all.filter(i=>!i.checked).map(i=>i.dataset.bxc);
     await log('box-count',{name:'ספירת קופסאות'},all.length-miss.length,miss.length?'חסרות: '+miss.join(', '):'כל הקופסאות נמצאו');
-    toast(miss.length?`חסרות ${miss.length} קופסאות: ${miss.slice(0,8).join(', ')}${miss.length>8?'...':''}`:`כל ${all.length} הקופסאות נמצאו`); return true; });
+    toast(miss.length?`חסרות ${miss.length} קופסאות: ${miss.slice(0,8).join(', ')}${miss.length>8?'…':''}`:`כל ${all.length} הקופסאות נמצאו`); return true; });
   $('#bxCA').addEventListener('click',()=>document.querySelectorAll('#genBody [data-bxc]').forEach(i=>i.checked=true));
   $('#bxCN').addEventListener('click',()=>document.querySelectorAll('#genBody [data-bxc]').forEach(i=>i.checked=false));
 }
@@ -1444,7 +1443,7 @@ function bxAdd(){
     if(!/^[A-Z]{1,6}$/.test(s)){ err('סדרה: אותיות באנגלית בלבד, למשל SA.'); return false; }
     if(!(a>=1&&z>=a)){ err('טווח מספרים לא תקין.'); return false; }
     if(z-a>299){ err('אפשר להוסיף עד 300 קופסאות בפעם אחת.'); return false; }
-    const ex=[]; for(let i=a;i<=z;i++) if(S.boxes[s+i]) ex.push(s+i); if(ex.length){ err('כבר קיימות: '+ex.slice(0,6).join(', ')+(ex.length>6?'...':'')); return false; }
+    const ex=[]; for(let i=a;i<=z;i++) if(S.boxes[s+i]) ex.push(s+i); if(ex.length){ err('כבר קיימות: '+ex.slice(0,6).join(', ')+(ex.length>6?'…':'')); return false; }
     const tt=boxTpl(s); if(!S.boxtpl[s]) await put('boxtpl',{id:s,items:tt,updatedAt:Date.now()});
     if(m==='fill'){ const n=z-a+1; const sh=Object.entries(tt).find(([d,q])=>bxPick(d,q*n).short); if(sh){ err(`אין מספיק ${sh[0]} בתוקף במלאי החופשי (צריך ${sh[1]*n}). אפשר להוסיף אותן ריקות.`); return false; } }
     const exps=Object.keys(tt).map((d,k)=>m==='built'?readExp('bxAE'+k):'');
@@ -1619,6 +1618,80 @@ document.addEventListener('click',e=>{
   if(!sapCan()) return toast('יש לך הרשאת צפייה בלבד במסך הזה.');
   if(b.dataset.sap==='update') sapUpdate(); else if(b.dataset.sap==='cutoff') sapCutoff();
 });
+
+
+/* ---------- grouped navigation + "more" menus (apple-design: popovers grow from their trigger, close on outside tap / Esc) ---------- */
+function navGroups(){
+  document.querySelectorAll('nav.tabs .ngrp').forEach(g=>{ const kids=[...g.querySelectorAll('a[data-route]')];
+    g.hidden=kids.every(a=>a.hidden); const cur=kids.find(a=>a.getAttribute('aria-current')==='page');
+    g.classList.toggle('on',!!cur); g.querySelector('.ngrp-lbl').textContent=cur?(cur.dataset.label||cur.textContent.trim()):g.dataset.label; });
+}
+function closePops(except){ document.querySelectorAll('.ngrp.open,.more.open,.acct.open').forEach(x=>{ if(x===except) return; x.classList.remove('open'); const b=x.querySelector('[aria-expanded]'); if(b) b.setAttribute('aria-expanded','false'); }); }
+document.addEventListener('click',e=>{
+  const t=e.target.closest('.ngrp-btn,.more-btn');
+  if(t){ const box=t.parentElement, open=!box.classList.contains('open'); closePops(box); box.classList.toggle('open',open); t.setAttribute('aria-expanded',String(open));
+    if(open){ const first=box.querySelector('.ngrp-pop a:not([hidden]),.more-pop button:not([hidden])'); if(first&&e.detail===0) first.focus(); } return; }
+  if(e.target.closest('.ngrp-pop a,.more-pop button')){ setTimeout(()=>closePops(),0); return; }
+  if(!e.target.closest('.ngrp,.more,.acct')) closePops();
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ const open=document.querySelector('.ngrp.open,.more.open'); if(open){ closePops(); const b=open.querySelector('[aria-expanded]'); if(b) b.focus(); } } });
+new MutationObserver(navGroups).observe(document.querySelector('nav.tabs'),{subtree:true,attributes:true,attributeFilter:['hidden']});
+/* ---------- איתור אצווה (ריקול): איפה האצווה נמצאת עכשיו, לאן יצאה, ואילו פתקים קשורים אליה ---------- */
+const TR_TYPES={receive:'קבלת מלאי',out:'הורדה',sign:'החתמה','kit-sign':'החתמה מערכה',cancel:'זיכוי פתק',count:'ספירה',adjust:'התאמה לספירה',kit:'ערכות','box-fill':'מילוי פקל','box-return':'החזרה מפקל','box-use':'שימוש מפקל'};
+const trNorm=s=>String(s||'').trim().toLowerCase();
+function batchTrace(batch){
+  const b=trNorm(batch); const eq=x=>trNorm(x)===b;
+  const here=[];
+  Object.values(S.items).filter(i=>eq(i.batch)&&(+i.qty||0)>0).forEach(i=>here.push({where:'מלאי חופשי',detail:i.loc,name:i.name,exp:i.exp,qty:+i.qty||0}));
+  Object.values(S.kits).forEach(k=>(k.contents||[]).filter(c=>eq(c.batch)&&(+c.qty||0)>0).forEach(c=>here.push({where:k.status==='issued'?'ערכה שהוצאה':'ערכה',detail:`${k.name}${k.serial?' ('+k.serial+')':''} · ${k.loc||''}`,name:c.name,exp:c.exp,qty:+c.qty||0})));
+  Object.values(S.boxes).filter(x=>x.status!=='empty').forEach(x=>(x.contents||[]).filter(c=>eq(c.batch)&&(+c.qty||0)>0).forEach(c=>here.push({where:x.status==='signed'?'פקל חתום (אצל רופא)':'פקל בכספת',detail:`${x.id} · ${x.loc||''}${x.status==='signed'&&x.to?' · '+x.to:''}`,name:c.name,exp:c.exp,qty:+c.qty||0})));
+  const moves=Object.values(S.ledger).filter(l=>eq(l.batch)).sort((a,b)=>a.at-b.at);
+  const filled=new Map();
+  moves.filter(l=>l.type==='box-fill').forEach(l=>{ const m=/קופסה (\S+)/.exec(l.note||''); if(m) filled.set(m[1],(filled.get(m[1])||0)+(+l.outQty||0)); });
+  const notes=[]; const all=(window.SG&&window.SG.notes)?window.SG.notes():[];
+  moves.filter(l=>(l.type==='sign'||l.type==='kit-sign')&&l.noteTs).forEach(l=>{ const n=all.find(x=>x.ts===l.noteTs); notes.push({at:l.at,qty:+l.outQty||0,name:l.name,n}); });
+  const sap=(typeof sapLast==='function'&&sapLast())?(sapLast().lines||[]).filter(x=>eq(x.batch)):[];
+  const info=[...here,...moves].find(x=>x.name)||{}; const exp=(here.find(x=>x.exp)||moves.find(x=>x.exp)||{}).exp||'';
+  return {batch:String(batch).trim(),drug:info.name||'',exp,here,moves,filled,notes,sap,total:here.reduce((t,x)=>t+x.qty,0),
+    out:moves.reduce((t,l)=>t+((l.type==='sign'||l.type==='kit-sign'||l.type==='out')?(+l.outQty||0):0),0)};
+}
+function traceHtml(t,forPrint){
+  const tbl=(head,rows,empty)=>rows.length?`<div class="tbl-wrap" style="box-shadow:none"><table><thead><tr>${head.map(h=>`<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`:`<p class="empty">${empty}</p>`;
+  return `<div class="trace">
+    <p class="sub" style="margin:0">${t.drug?`<strong>${esc(t.drug)}</strong> · `:''}אצווה <strong dir="ltr">${esc(t.batch)}</strong>${t.exp?' · תוקף '+fmtExp(t.exp).slice(3):''} · הופק ${fmtDT(Date.now())}</p>
+    <div class="trace-kpis"><div><b>${t.total}</b>נמצאות אצלנו עכשיו</div><div><b>${t.here.length}</b>מקומות</div><div><b>${t.out}</b>יצאו בהחתמות ובהורדות</div><div><b>${t.notes.length}</b>פתקי החתמה קשורים</div></div>
+    <h3>איפה האצווה נמצאת עכשיו</h3>
+    ${tbl(['מקום','פרטים','סם','תוקף','כמות'],t.here.map(x=>`<tr><td><strong>${esc(x.where)}</strong></td><td>${esc(x.detail)}</td><td>${esc(x.name)}</td><td>${fmtExp(x.exp).slice(3)}</td><td class="num">${x.qty}</td></tr>`),'האצווה לא נמצאת עכשיו באף מקום אצלנו.')}
+    ${t.filled.size?`<h3>פקלים שמולאו מהאצווה</h3><p class="sub" style="margin:0 0 .4rem">כולל פקלים שכבר נוצלו או רוקנו. בשימוש מפקל לא נרשמת אצווה, ולכן כדאי לבדוק את הפקלים האלה.</p>${tbl(['פקל','כמה מולאו מהאצווה','מצב היום'],[...t.filled].map(([id,q])=>{ const x=S.boxes[id]; return `<tr><td dir="ltr" style="text-align:end">${esc(id)}</td><td class="num">${q}</td><td>${x?esc(BOX_ST[x.status]||x.status)+(x.status==='signed'&&x.to?' · '+esc(x.to):''):'נמחק'}</td></tr>`; }),'')}`:''}
+    <h3>פתקי החתמה שבהם נעשה שימוש באצווה</h3>
+    ${tbl(['תאריך','סם','כמות','שם בפתק','מזהה','סיבה'],t.notes.map(x=>`<tr><td>${fmtDT(x.at)}</td><td>${esc(x.name)}</td><td class="num">${x.qty}</td><td>${x.n?esc(x.n.name||''):'<span class="hint">אין גישה לפתק</span>'}</td><td>${x.n?esc((x.n.idType||'')+' '+(x.n.idNum||'')):''}</td><td>${x.n?esc(x.n.reason||''):''}</td></tr>`),'אין פתקי החתמה שקשורים לאצווה.')}
+    <h3>כל התנועות של האצווה בספר הסמים</h3>
+    ${tbl(['תאריך','פעולה','נכנס','יצא','מיקום','הערה','משתמש'],t.moves.map(l=>`<tr><td>${fmtDT(l.at)}</td><td>${esc(TR_TYPES[l.type]||TYPE_HE[l.type]||l.type)}</td><td class="num">${l.inQty||''}</td><td class="num">${l.outQty||''}</td><td>${esc(l.loc||'')}</td><td>${esc(l.note||'')}</td><td>${esc(l.byUser||l.byName||'')}</td></tr>`),'אין תנועות רשומות לאצווה.')}
+    ${t.sap.length?`<h3>בסאפ</h3>${tbl(['סם','תוקף בסאפ','כמות בסאפ'],t.sap.map(x=>`<tr><td>${esc(x.name)}</td><td>${fmtExp(x.exp).slice(3)}</td><td class="num">${x.qty}</td></tr>`),'')}`:''}
+    ${forPrint?'<div class="trace-sign"><div>שם וחתימת האחראי</div><div>תאריך</div></div>':''}
+  </div>`;
+}
+function openTrace(pre){
+  const known=[...knownBatches().values()].sort((a,b)=>a.batch.localeCompare(b.batch));
+  openGen('איתור אצווה (ריקול)',`<p class="sub" style="margin:0">מקלידים מספר אצווה ומקבלים: איפה היא נמצאת עכשיו (מלאי, ערכות, פקלים), לאילו פקלים היא מולאה, באילו פתקי החתמה השתמשו בה, וכל התנועות שלה בספר הסמים.</p>
+    <div class="field"><label for="trB">מספר אצווה</label><input id="trB" list="trList" dir="ltr" autocomplete="off" spellcheck="false" value="${esc(pre||'')}" placeholder="למשל M2401…"><datalist id="trList">${known.map(k=>`<option value="${esc(k.batch)}">${esc(k.name)} · ${fmtExp(k.exp).slice(3)}</option>`).join('')}</datalist></div>
+    <div id="trOut" aria-live="polite"></div>`,'איתור',async err=>{
+    const v=$('#trB').value.trim(); if(!v){ err('יש להקליד מספר אצווה.'); return false; }
+    const t=batchTrace(v);
+    if(!t.here.length&&!t.moves.length&&!t.sap.length){ $('#trOut').innerHTML=''; err('לא נמצא שום דבר עם האצווה הזו. בדקו את המספר.'); return false; }
+    $('#genErr').textContent='';
+    $('#trOut').innerHTML=traceHtml(t,false)+`<div class="dlg-actions"><button type="button" class="btn" id="trPrint">הדפסה / שמירה כ־PDF</button></div>`;
+    $('#trPrint').addEventListener('click',()=>printTrace(t));
+    return false; });
+  if(pre) setTimeout(()=>$('#genOk').click(),50);
+}
+function printTrace(t){
+  const w=window.open('','_blank'); if(!w) return toast('הדפדפן חסם חלון חדש. אפשרו חלונות קופצים לאתר.');
+  const css=[...document.querySelectorAll('link[rel=stylesheet]')].map(l=>`<link rel="stylesheet" href="${l.href}">`).join('');
+  w.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>איתור אצווה ${esc(t.batch)}</title>${css}<style>body{background:#fff;padding:16px}main{max-width:1000px;margin:0 auto}@media print{@page{size:A4;margin:12mm}.noprint{display:none}}</style></head><body><main><div class="noprint" style="margin-bottom:12px"><button class="btn primary" onclick="print()">הדפסה / שמירה כ־PDF</button></div><h1>איתור אצווה (ריקול)</h1>${traceHtml(t,true)}</main></body></html>`);
+  w.document.close();
+}
+document.addEventListener('click',e=>{ if(e.target.closest('[data-trace]')) openTrace(''); });
 
 /* ---------- actions ---------- */
 document.addEventListener('click',async e=>{
