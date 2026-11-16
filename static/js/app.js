@@ -1624,8 +1624,11 @@ document.addEventListener('click',e=>{
 function navGroups(){
   document.querySelectorAll('nav.tabs .ngrp').forEach(g=>{ const kids=[...g.querySelectorAll('a[data-route]')];
     g.hidden=kids.every(a=>a.hidden); const cur=kids.find(a=>a.getAttribute('aria-current')==='page');
-    g.classList.toggle('on',!!cur); g.querySelector('.ngrp-lbl').textContent=cur?(cur.dataset.label||cur.textContent.trim()):g.dataset.label; });
+    // on a phone the short group name is kept (the group is highlighted instead), so the menu fits on one line
+    const narrow=matchMedia('(max-width:759px)').matches;
+    g.classList.toggle('on',!!cur); g.querySelector('.ngrp-lbl').textContent=cur&&!narrow?(cur.dataset.label||cur.textContent.trim()):g.dataset.label; });
 }
+addEventListener('resize',()=>navGroups());
 function closePops(except){ document.querySelectorAll('.ngrp.open,.more.open,.acct.open').forEach(x=>{ if(x===except) return; x.classList.remove('open'); const b=x.querySelector('[aria-expanded]'); if(b) b.setAttribute('aria-expanded','false'); }); }
 document.addEventListener('click',e=>{
   const t=e.target.closest('.ngrp-btn,.more-btn');

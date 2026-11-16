@@ -25,7 +25,7 @@
     <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg></span><span>ניהול מלאי</span></div>
     <button type="button" class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="menuArea"><span aria-hidden="true">☰</span>תפריט</button>
     <nav class="tabs" aria-label="ניווט ראשי">
-      <a href="#dashboard" data-route="dashboard">לוח בקרה</a>
+      <a href="#dashboard" data-route="dashboard" aria-label="לוח בקרה"><span class="lbl-l2">לוח בקרה</span><span class="lbl-s2" aria-hidden="true">ראשי</span></a>
       <div class="ngrp" data-label="מלאי"><button type="button" class="ngrp-btn" aria-haspopup="true" aria-expanded="false"><span class="ngrp-lbl">מלאי</span><span id="navGBadge" class="badge-n" hidden></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         <div class="ngrp-pop" role="menu">
           <a href="#inventory" data-route="inventory" data-label="מלאי">מלאי <span id="navBadge" class="badge-n" hidden></span></a>
@@ -34,12 +34,12 @@
         </div></div>
       <div class="ngrp" data-label="רישום"><button type="button" class="ngrp-btn" aria-haspopup="true" aria-expanded="false"><span class="ngrp-lbl">רישום</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         <div class="ngrp-pop" role="menu">
-          <a href="#sign" data-route="sign" data-label="החתמה">החתמה</a>
-          <a href="#notes" data-route="notes" id="navNotes" data-label="פתקי החתמה" hidden>פתקי החתמה</a>
           <a href="#ledger" data-route="ledger" data-label="ספר סמים">ספר סמים</a>
           <a href="#count" data-route="count" data-label="ספירת מלאי">ספירת מלאי</a>
+          <a href="#sap" data-route="sap" data-label="השוואה לסאפ">השוואה לסאפ</a>
         </div></div>
-      <a href="#sap" data-route="sap" aria-label="השוואה לסאפ"><span class="lbl-l">השוואה לסאפ</span><span class="lbl-s" aria-hidden="true">סאפ</span></a>
+      <a href="#sign" data-route="sign">החתמה</a>
+      <a href="#notes" data-route="notes" id="navNotes" aria-label="פתקי החתמה" hidden><span class="lbl-l">פתקי החתמה</span><span class="lbl-s" aria-hidden="true">פתקים</span></a>
     </nav>
     <div class="fs" id="menuArea" role="group" aria-label="גודל טקסט">
       <span aria-hidden="true">גודל טקסט</span>
