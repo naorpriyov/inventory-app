@@ -69,6 +69,10 @@ def init_db():
         CREATE INDEX IF NOT EXISTS docs_updated ON docs(updated);
         CREATE INDEX IF NOT EXISTS docs_parent ON docs(parent);
         CREATE TABLE IF NOT EXISTS settings(k TEXT PRIMARY KEY, v TEXT);
+        CREATE TABLE IF NOT EXISTS audit(
+            id INTEGER PRIMARY KEY AUTOINCREMENT, at REAL NOT NULL, uid TEXT, username TEXT,
+            op TEXT NOT NULL, path TEXT, data TEXT);
+        CREATE INDEX IF NOT EXISTS audit_at ON audit(at);
         """
     )
     con.commit()
@@ -282,7 +286,7 @@ APPEND_ONLY = {"ledger", "counts", "cancels"}
 # אוספים שהתוכנה משתמשת בהם. עובד לא יכול ליצור אוספים אחרים
 COLLECTIONS = {"items", "kits", "locations", "catalog", "batches", "perms", "ledger", "counts",
                "cancels", "caregivers", "meta", "recon", "moves", "notes",
-               "boxes", "boxtpl"}  # boxes = קופסאות ערכות סמים ממוספרות, boxtpl = תבנית התכולה לכל סדרה
+               "boxes", "boxtpl"}  # boxes = קופסאות פקלי סמים ממוספרות, boxtpl = תבנית התכולה לכל סדרה
 
 # נתונים רגישים נשלחים רק למי שיש לו גישה (צפייה או מלאה) לאחד מהמסכים שצריכים אותם
 READ_TABS = {
@@ -359,8 +363,20 @@ def valid_doc_path(path):
     return len(seg) >= 2 and len(seg) % 2 == 0 and all(SEG_RE.match(s) for s in seg)
 
 
+def audit(op, path=None, data=None, user=None, commit=True):
+    """יומן ביקורת: כל שינוי נרשם עם מי ומתי. אין שום דרך למחוק או לשנות רשומות ביומן."""
+    u = user if user is not None else getattr(g, "user", None)
+    db().execute("INSERT INTO audit(at,uid,username,op,path,data) VALUES(?,?,?,?,?,?)",
+                 (time.time(), u["id"] if u else None, u["username"] if u else None, op, path,
+                  None if data is None else json.dumps(data, ensure_ascii=False)))
+    if commit:
+        db().commit()
+
+
 def write_doc(path, data, deleted=False):
     parent = path.rsplit("/", 1)[0]
+    before = get_doc(path) if deleted else None
+    audit("delete" if deleted else "set", path, before if deleted else data, commit=False)
     db().execute(
         """INSERT INTO docs(path,parent,data,deleted,updated,by) VALUES(?,?,?,?,?,?)
            ON CONFLICT(path) DO UPDATE SET data=excluded.data, deleted=excluded.deleted,
@@ -397,8 +413,24 @@ def _security_headers(resp):
 
 
 # ---------------------------------------------------------------- pages
+def asset_version():
+    """חותמת גרסה לפי זמן השינוי של קבצי העיצוב והקוד, כדי שהדפדפן תמיד יטען את הגרסה החדשה."""
+    m = 0
+    for d in ("css", "js", "vendor", "fonts"):
+        folder = os.path.join(STATIC, d)
+        if os.path.isdir(folder):
+            for f in os.listdir(folder):
+                m = max(m, os.path.getmtime(os.path.join(folder, f)))
+    return str(int(m))
+
+
 def static_page(name):
-    resp = send_from_directory(STATIC, name)
+    if name.endswith(".html"):
+        with open(os.path.join(STATIC, name), encoding="utf-8") as f:
+            html = f.read().replace("__V__", asset_version())
+        resp = app.response_class(html, mimetype="text/html")
+    else:
+        resp = send_from_directory(STATIC, name)
     resp.headers["Cache-Control"] = "no-cache"
     return resp
 
@@ -470,12 +502,14 @@ def api_login():
     u = db().execute("SELECT * FROM users WHERE username=?", (name,)).fetchone()
     if not u or not check_password_hash(u["pw"], str(b.get("password") or "")):
         add_fail(ip_key, user_key)
+        audit("login-failed", None, {"username": name})
         time.sleep(0.6)
         return jsonify(error="שם משתמש או סיסמה שגויים."), 401
     if u["role"] == "blocked":
         return jsonify(error="החשבון חסום. פנו למנהל המערכת."), 403
     FAILS.pop(user_key, None)
     start_session(u)
+    audit("login", None, None, user=u)
     return jsonify(ok=True)
 
 
@@ -560,9 +594,77 @@ def admin_user_update(uid):
         db().execute("UPDATE users SET pw=? WHERE id=?", (generate_password_hash(b["password"]), uid))
     if b.get("role") in ("user", "owner", "blocked"):
         db().execute("UPDATE users SET role=? WHERE id=?", (b["role"], uid))
+    audit("user-update", "users/" + uid, {"role": b.get("role"), "password_reset": "password" in b}, commit=False)
     db().commit()
     return jsonify(ok=True)
 
+
+
+# ---------------------------------------------------------------- ledger integrity
+def _live_docs(prefix):
+    rows = db().execute("SELECT data FROM docs WHERE parent=? AND deleted=0", (prefix,)).fetchall()
+    out = []
+    for r in rows:
+        try:
+            out.append(json.loads(r["data"]))
+        except Exception:
+            pass
+    return out
+
+
+def free_stock(name):
+    return sum(int(i.get("qty") or 0) for i in _live_docs("items") if i.get("name") == name)
+
+
+def kit_stock(name):
+    t = 0
+    for k in _live_docs("kits"):
+        if k.get("status") != "issued":
+            t += sum(int(c.get("qty") or 0) for c in (k.get("contents") or []) if c.get("name") == name)
+    for b in _live_docs("boxes"):
+        if b.get("status") != "empty":
+            t += sum(int(c.get("qty") or 0) for c in (b.get("contents") or []) if c.get("name") == name)
+    return t
+
+
+def seal_ledger(data):
+    """רישום בספר הסמים: השרת קובע בעצמו את הזמן, את המשתמש ואת היתרות, ולא סומך על הדפדפן."""
+    name = data.get("name")
+    if not isinstance(name, str) or not name.strip():
+        return "רישום בספר הסמים חייב שם סם"
+    for f in ("inQty", "outQty", "counted"):
+        v = data.get(f)
+        if v in (None, ""):
+            continue
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or v < 0 or v != int(v):
+            return "כמות לא תקינה בספר הסמים"
+    data["at"] = int(time.time() * 1000)
+    data["by"] = g.user["id"]
+    data["byUser"] = g.user["username"]
+    data["balance"] = free_stock(name)
+    data["kitBalance"] = kit_stock(name)
+    data["sealed"] = True
+    return None
+
+
+@app.get("/api/admin/audit")
+@owner_required
+def admin_audit():
+    try:
+        limit = max(1, min(int(request.args.get("limit", "200")), 1000))
+        before = int(request.args.get("before", "0"))
+    except ValueError:
+        return jsonify(error="פרמטר לא תקין"), 400
+    q = (request.args.get("q") or "").strip()
+    sql = "SELECT id,at,username,op,path,data FROM audit WHERE 1=1"
+    args = []
+    if before:
+        sql += " AND id<?"; args.append(before)
+    if q:
+        sql += " AND (path LIKE ? OR username LIKE ? OR data LIKE ?)"; args += [f"%{q}%"] * 3
+    sql += " ORDER BY id DESC LIMIT ?"; args.append(limit)
+    rows = [dict(r) for r in db().execute(sql, args).fetchall()]
+    return jsonify(rows=rows)
 
 # ---------------------------------------------------------------- data api
 @app.get("/api/changes")
@@ -595,6 +697,15 @@ def api_put():
         data = cur
     if not can_write(g.user, path, data, "set"):
         return jsonify(error="אין לך הרשאה לפעולה הזו", code="invalid_argument"), 403
+    top = path.split("/")[0]
+    if top == "items":
+        q = data.get("qty", 0)
+        if isinstance(q, bool) or not isinstance(q, (int, float)) or q < 0 or q != int(q):
+            return jsonify(error="כמות לא תקינה: מספר שלם, 0 ומעלה", code="invalid_argument"), 400
+    if top == "ledger" and len(path.split("/")) == 2:
+        err = seal_ledger(data)
+        if err:
+            return jsonify(error=err, code="invalid_argument"), 400
     write_doc(path, data)
     return jsonify(ok=True, data=data)
 

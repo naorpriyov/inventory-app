@@ -172,6 +172,7 @@
       body.innerHTML = `<p class="sub" style="margin:0">עובד חדש נרשם בעמוד ההרשמה עם קוד ההרשמה הזה. בקשת ההרשאות שלו מגיעה אליך אוטומטית, ואת ההרשאות עצמן מגדירים בעמוד המלאי בכפתור "הרשאות משתמשים".</p>
         <div class="invite" aria-label="קוד הרשמה">${esc(j.invite)}</div>
         <div><button type="button" class="btn sm" data-acc="invite">יצירת קוד חדש</button> <span class="hint">הקוד הקודם יפסיק לעבוד.</span></div>
+        <div><button type="button" class="btn sm" data-acc="audit">יומן ביקורת</button> <span class="hint">כל שינוי וכל כניסה, עם מי ומתי. אי אפשר למחוק ממנו.</span></div>
         <p class="sub" style="margin:0">${j.lastBackup ? `גיבוי אוטומטי אחרון: ${esc(new Date(j.lastBackup).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }))}. נשמרים ${esc(j.backups)} גיבויים יומיים.` : 'עוד לא נשמר גיבוי אוטומטי.'}</p>
         <h3 style="margin:.5rem 0 0;font-size:1rem">משתמשים רשומים</h3>
         <div>${j.users.map(u => `<div class="acc-row"><div><strong>${esc(u.name)}</strong><div class="meta">${esc(u.username)}, ${roleHe[u.role] || u.role}</div></div>
@@ -181,6 +182,7 @@
     }
     dlg.addEventListener('click', async e => {
       const b = e.target.closest('[data-acc]'); if (!b) return;
+      if (b.dataset.acc === 'audit') { openAudit(); return; }
       try {
         if (b.dataset.acc === 'invite') { await req('POST', API + '/admin/invite', {}); toast('נוצר קוד הרשמה חדש'); }
         if (b.dataset.acc === 'pw') { const p = prompt(`סיסמה חדשה עבור ${b.dataset.name} (לפחות 7 תווים):`); if (!p) return; await req('POST', API + '/admin/users/' + b.dataset.id, { password: p }); toast('הסיסמה אופסה. מסרו אותה לעובד.'); }
@@ -188,6 +190,40 @@
         renderAccounts();
       } catch (er) { toast(er.message); }
     });
+    /* ---------- audit log (owner only) ---------- */
+    const COLL_HE = { items: 'מלאי', ledger: 'ספר סמים', boxes: 'פקלי סמים', boxtpl: 'תבנית פקל', kits: 'ערכות', perms: 'הרשאות', notes: 'פתקי החתמה', counts: 'ספירת מלאי', moves: 'תנועות', cancels: 'זיכויים', caregivers: 'מטפלים', locations: 'מיקומים', meta: 'הגדרות', recon: 'טיפול בפתקים', catalog: 'קטלוג', batches: 'אצוות', users: 'משתמשים' };
+    const OP_HE = { set: 'שמירה', delete: 'מחיקה', login: 'כניסה', 'login-failed': 'ניסיון כניסה שגוי', 'user-update': 'שינוי משתמש' };
+    const adlg = document.createElement('dialog');
+    adlg.setAttribute('aria-labelledby', 'audTitle');
+    adlg.style.maxWidth = 'min(860px,96vw)';
+    adlg.innerHTML = `<form method="dialog" style="padding:1.3rem;display:grid;gap:.8rem;max-height:88vh;overflow-y:auto" novalidate>
+      <h2 id="audTitle" style="margin:0">יומן ביקורת</h2>
+      <p class="sub" style="margin:0">כל שינוי בנתונים וכל ניסיון כניסה נרשמים כאן אוטומטית. אי אפשר למחוק או לשנות את היומן.</p>
+      <div class="field"><label for="audQ">חיפוש (שם משתמש, סם, מספר פקל…)</label><input id="audQ" type="search" autocomplete="off"></div>
+      <div id="audBody"></div>
+      <div class="dlg-actions"><button type="button" class="btn sm" id="audMore">עוד</button><button class="btn" value="close">סגירה</button></div></form>`;
+    document.body.appendChild(adlg);
+    let audLast = 0, audT = null;
+    const summ = r => { let d = null; try { d = r.data ? JSON.parse(r.data) : null; } catch (e) {}
+      if (!d) return ''; const bits = [];
+      ['name', 'id', 'status', 'qty', 'inQty', 'outQty', 'batch', 'loc', 'note', 'username', 'role'].forEach(k => { if (d[k] != null && d[k] !== '' && bits.length < 6) bits.push(String(d[k])); });
+      return bits.join(' · '); };
+    async function loadAudit(reset) {
+      if (reset) { audLast = 0; adlg.querySelector('#audBody').innerHTML = ''; }
+      const q = adlg.querySelector('#audQ').value.trim();
+      let j; try { j = await req('GET', API + '/admin/audit?limit=100' + (audLast ? '&before=' + audLast : '') + (q ? '&q=' + encodeURIComponent(q) : '')); } catch (e) { toast(e.message); return; }
+      const rows = j.rows || []; if (rows.length) audLast = rows[rows.length - 1].id;
+      adlg.querySelector('#audMore').hidden = rows.length < 100;
+      const html = rows.map(r => { const col = (r.path || '').split('/')[0];
+        return `<tr><td style="white-space:nowrap">${esc(new Date(r.at * 1000).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }))}</td><td>${esc(r.username || '')}</td><td>${esc(OP_HE[r.op] || r.op)}</td><td>${esc(COLL_HE[col] || col)}</td><td>${esc(summ(r))}</td></tr>`; }).join('');
+      const body = adlg.querySelector('#audBody');
+      if (!body.querySelector('table')) body.innerHTML = `<div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th scope="col">מתי</th><th scope="col">משתמש</th><th scope="col">פעולה</th><th scope="col">איפה</th><th scope="col">פרטים</th></tr></thead><tbody></tbody></table></div>`;
+      body.querySelector('tbody').insertAdjacentHTML('beforeend', html || (reset ? '<tr><td colspan="5">אין רישומים.</td></tr>' : ''));
+    }
+    function openAudit() { adlg.querySelector('#audQ').value = ''; loadAudit(true); adlg.showModal(); }
+    adlg.querySelector('#audQ').addEventListener('input', () => { clearTimeout(audT); audT = setTimeout(() => loadAudit(true), 300); });
+    adlg.querySelector('#audMore').addEventListener('click', () => loadAudit(false));
+
     const ab = document.getElementById('acctBtn');
     if (ab) ab.addEventListener('click', () => { renderAccounts(); dlg.showModal(); });
 
