@@ -154,7 +154,7 @@
     const top = document.querySelector('.top-in');
     if (top) {
       const box = document.createElement('div'); box.className = 'acct';
-      box.innerHTML = `<span class="who">${esc(m.name)}</span>${m.isOwner ? '<button type="button" class="btn sm" id="acctBtn">חשבונות משתמשים</button>' : ''}<button type="button" class="btn sm" id="pwBtn">שינוי סיסמה</button><a class="btn sm" href="/logout">יציאה</a>`;
+      box.innerHTML = `<span class="who">${esc(m.name)}</span>${m.isOwner ? '<button type="button" class="btn sm" id="acctBtn">חשבונות משתמשים</button>' : ''}<button type="button" class="btn sm" id="pushBtn">התראות</button><button type="button" class="btn sm" id="pwBtn">שינוי סיסמה</button><a class="btn sm" href="/logout">יציאה</a>`;
       top.appendChild(box);
     }
 
@@ -226,6 +226,51 @@
 
     const ab = document.getElementById('acctBtn');
     if (ab) ab.addEventListener('click', () => { renderAccounts(); dlg.showModal(); });
+
+    /* ---------- phone notifications ---------- */
+    const pdlg = document.createElement('dialog');
+    pdlg.setAttribute('aria-labelledby', 'pushTitle');
+    pdlg.innerHTML = `<form method="dialog" style="padding:1.3rem;display:grid;gap:.85rem" novalidate>
+      <h2 id="pushTitle" style="margin:0">התראות לטלפון</h2>
+      <p class="sub" style="margin:0">פעם ביום, מ־08:00, מגיעה תזכורת קצרה אם יש משהו לטפל בו: תוקף שפג או מתקרב, מלאי נמוך ופקלים שחתומים יותר משבועיים או ריקים. בתחילת כל חודש מגיעה גם הודעה שהדוח החודשי מוכן. בהתראות אין פרטים אישיים, רק מספרים.</p>
+      <p id="pushState" style="margin:0;font-weight:600"></p>
+      <p id="pushHint" class="hint" style="margin:0" hidden></p>
+      <div class="dlg-actions"><button type="button" class="btn primary" id="pushOn">הפעלת התראות במכשיר הזה</button><button type="button" class="btn" id="pushTest" hidden>שליחת התראת בדיקה</button><button type="button" class="btn" id="pushOff" hidden>כיבוי במכשיר הזה</button><button class="btn" value="close">סגירה</button></div></form>`;
+    document.body.appendChild(pdlg);
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent), standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    const b64 = s => { const p = '='.repeat((4 - s.length % 4) % 4); const r = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...r].map(c => c.charCodeAt(0))); };
+    async function pushReg() { if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null; return navigator.serviceWorker.getRegistration('/') || null; }
+    async function pushRender() {
+      const st = pdlg.querySelector('#pushState'), hint = pdlg.querySelector('#pushHint'), on = pdlg.querySelector('#pushOn'), off = pdlg.querySelector('#pushOff'), test = pdlg.querySelector('#pushTest');
+      hint.hidden = true; on.hidden = false; off.hidden = test.hidden = true;
+      if (ios && !standalone) { st.textContent = 'באייפון ההתראות עובדות רק מהאפליקציה המותקנת.'; hint.hidden = false; hint.textContent = 'פותחים את האתר ב־Safari, לוחצים "שיתוף" ← "הוסף למסך הבית", ופותחים את התוכנה מהאייקון. משם מפעילים את ההתראות.'; on.hidden = true; return; }
+      const reg = await pushReg();
+      if (!reg) { st.textContent = 'הדפדפן הזה לא תומך בהתראות, או שהאתר לא נפתח בכתובת המאובטחת.'; on.hidden = true; return; }
+      if (Notification.permission === 'denied') { st.textContent = 'ההתראות חסומות בהגדרות הדפדפן לאתר הזה. צריך לאפשר אותן שם ואז לנסות שוב.'; on.hidden = true; return; }
+      const sub = await reg.pushManager.getSubscription();
+      st.textContent = sub ? 'ההתראות פעילות במכשיר הזה.' : 'ההתראות לא פעילות במכשיר הזה.';
+      on.hidden = !!sub; off.hidden = test.hidden = !sub;
+    }
+    pdlg.querySelector('#pushOn').addEventListener('click', async () => {
+      try {
+        const reg = await pushReg(); if (!reg) return;
+        if ((await Notification.requestPermission()) !== 'granted') { toast('לא ניתן אישור להתראות.'); return pushRender(); }
+        const { key } = await req('GET', API + '/push/key');
+        const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(key) });
+        await req('POST', API + '/push/subscribe', { sub: sub.toJSON() });
+        toast('ההתראות הופעלו'); pushRender();
+      } catch (er) { toast('הפעלת ההתראות נכשלה: ' + (er.message || er)); }
+    });
+    pdlg.querySelector('#pushOff').addEventListener('click', async () => {
+      const reg = await pushReg(); const sub = reg && await reg.pushManager.getSubscription();
+      if (sub) { try { await req('POST', API + '/push/unsubscribe', { endpoint: sub.endpoint }); } catch (e) {} await sub.unsubscribe(); }
+      toast('ההתראות כובו במכשיר הזה'); pushRender();
+    });
+    pdlg.querySelector('#pushTest').addEventListener('click', async () => {
+      try { const j = await req('POST', API + '/push/test', {}); toast(j.sent ? 'נשלחה התראת בדיקה' : 'ההתראה לא נשלחה. נסו לכבות ולהפעיל מחדש.'); } catch (er) { toast(er.message); }
+    });
+    const pbn = document.getElementById('pushBtn');
+    if (pbn) pbn.addEventListener('click', () => { pushRender(); pdlg.showModal(); });
 
     const pb = document.getElementById('pwBtn');
     if (pb) pb.addEventListener('click', async () => {

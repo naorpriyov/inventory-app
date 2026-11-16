@@ -41,6 +41,12 @@ def main():
                     z.write(p, os.path.join("inventory-app", os.path.relpath(p, BASE)))
             z.write(db_copy, "inventory-app/data/inventory.db")
             z.write(os.path.join(DATA, "secret.key"), "inventory-app/data/secret.key")
+            if os.path.exists(os.path.join(DATA, "vapid_private.pem")):  # מפתח ההתראות לטלפון
+                z.write(os.path.join(DATA, "vapid_private.pem"), "inventory-app/data/vapid_private.pem")
+            rep = os.path.join(DATA, "reports")
+            if os.path.isdir(rep):  # הדוחות החודשיים שנשמרו
+                for f in os.listdir(rep):
+                    z.write(os.path.join(rep, f), "inventory-app/data/reports/" + f)
             z.writestr("inventory-app/data/.keep", "")
     print("נוצר הקובץ:", out)
     print("הקובץ מכיל נתונים רגישים. העבירו אותו רק בדרך מאובטחת, ומחקו אותו אחרי ההעברה.")

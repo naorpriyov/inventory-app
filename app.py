@@ -8,11 +8,15 @@ import re
 import secrets
 import sqlite3
 import time
+from datetime import datetime
 import unicodedata
 from functools import wraps
 
 from flask import Flask, g, jsonify, redirect, request, send_from_directory, session
 from werkzeug.security import check_password_hash, generate_password_hash
+
+import push_notify
+import reports
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 STATIC = os.path.join(BASE, "static")
@@ -73,6 +77,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT, at REAL NOT NULL, uid TEXT, username TEXT,
             op TEXT NOT NULL, path TEXT, data TEXT);
         CREATE INDEX IF NOT EXISTS audit_at ON audit(at);
+        CREATE TABLE IF NOT EXISTS push_subs(endpoint TEXT PRIMARY KEY, uid TEXT NOT NULL, sub TEXT NOT NULL, created REAL);
         """
     )
     con.commit()
@@ -601,8 +606,12 @@ def admin_user_update(uid):
 
 
 # ---------------------------------------------------------------- ledger integrity
-def _live_docs(prefix):
-    rows = db().execute("SELECT data FROM docs WHERE parent=? AND deleted=0", (prefix,)).fetchall()
+def _live_docs(prefix, con=None):
+    c = con or db()
+    if "%" in prefix:
+        rows = c.execute("SELECT data FROM docs WHERE parent LIKE ? AND deleted=0", (prefix,)).fetchall()
+    else:
+        rows = c.execute("SELECT data FROM docs WHERE parent=? AND deleted=0", (prefix,)).fetchall()
     out = []
     for r in rows:
         try:
@@ -722,6 +731,205 @@ def api_delete():
     return jsonify(ok=True)
 
 
+
+# ---------------------------------------------------------------- monthly report
+REPORT_DIR = os.path.join(DATA, "reports")
+
+
+def report_docs(con=None):
+    return {"items": _live_docs("items", con), "ledger": _live_docs("ledger", con), "boxes": _live_docs("boxes", con),
+            "kits": _live_docs("kits", con), "notes": _live_docs("notes/%/n", con)}
+
+
+def can_see_reports(u):
+    return is_owner(u) or tabs_of(u)["ledger"] != "none"
+
+
+@app.get("/report")
+def report_page():
+    u = current_user()
+    if not u:
+        return redirect("/login")
+    g.user = u
+    if not can_see_reports(u):
+        return "אין לך הרשאה לדוחות. פנו למנהל המערכת.", 403
+    try:
+        y, m = map(int, (request.args.get("month") or "%04d-%02d" % reports.prev_month()).split("-"))
+        assert 2000 <= y <= 2100 and 1 <= m <= 12
+    except Exception:
+        return "חודש לא תקין", 400
+    resp = app.response_class(reports.build(y, m, report_docs()), mimetype="text/html")
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+def monthly_report_job():
+    """בתחילת כל חודש נשמר קובץ של הדוח של החודש הקודם בתיקייה data/reports."""
+    y, m = reports.prev_month()
+    path = os.path.join(REPORT_DIR, "report-%04d-%02d.html" % (y, m))
+    if os.path.exists(path):
+        return None
+    con = sqlite3.connect(DB_PATH, timeout=30)
+    con.row_factory = sqlite3.Row
+    try:
+        docs = report_docs(con)
+    finally:
+        con.close()
+    if not docs["ledger"]:
+        return None
+    os.makedirs(REPORT_DIR, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(reports.build(y, m, docs))
+    return (y, m, path)
+
+
+# ---------------------------------------------------------------- phone notifications (web push)
+VAPID_KEY, VAPID_PUBLIC = push_notify.load_keys(DATA)
+
+
+@app.get("/api/push/key")
+@api_login_required
+def push_key():
+    return jsonify(key=VAPID_PUBLIC)
+
+
+@app.post("/api/push/subscribe")
+@api_login_required
+def push_subscribe():
+    sub = body().get("sub")
+    if not (isinstance(sub, dict) and isinstance(sub.get("endpoint"), str) and sub["endpoint"].startswith("https://")
+            and isinstance(sub.get("keys"), dict)):
+        return jsonify(error="מנוי לא תקין"), 400
+    db().execute("INSERT INTO push_subs(endpoint,uid,sub,created) VALUES(?,?,?,?) ON CONFLICT(endpoint) DO UPDATE SET uid=excluded.uid, sub=excluded.sub",
+                 (sub["endpoint"], g.user["id"], json.dumps(sub), time.time()))
+    db().commit()
+    audit("push-on", None, None)
+    return jsonify(ok=True)
+
+
+@app.post("/api/push/unsubscribe")
+@api_login_required
+def push_unsubscribe():
+    ep = str(body().get("endpoint") or "")
+    db().execute("DELETE FROM push_subs WHERE endpoint=? AND uid=?", (ep, g.user["id"]))
+    db().commit()
+    return jsonify(ok=True)
+
+
+@app.post("/api/push/test")
+@api_login_required
+def push_test():
+    n = notify_users({"title": "ניהול מלאי", "body": "ההתראות פועלות במכשיר הזה.", "url": "/"}, only_uid=g.user["id"])
+    return jsonify(ok=True, sent=n)
+
+
+def notify_users(payload, only_uid=None, want=None, con=None):
+    """Sends to every subscribed device of users that pass want(user). Returns how many were delivered."""
+    own = con is None
+    c = con or sqlite3.connect(DB_PATH, timeout=30)
+    c.row_factory = sqlite3.Row
+    sent = 0
+    try:
+        claim = push_notify.contact(BASE)
+        for r in c.execute("SELECT p.endpoint, p.sub, u.* FROM push_subs p JOIN users u ON u.id=p.uid WHERE u.role!='blocked'").fetchall():
+            if only_uid and r["id"] != only_uid:
+                continue
+            if want and not want(r, c):
+                continue
+            res = push_notify.send(json.loads(r["sub"]), payload, VAPID_KEY, claim)
+            if res == "ok":
+                sent += 1
+            elif res == "gone":
+                c.execute("DELETE FROM push_subs WHERE endpoint=?", (r["endpoint"],))
+                c.commit()
+            else:
+                print("push:", res, flush=True)
+    finally:
+        if own:
+            c.close()
+    return sent
+
+
+def _tabs_with(u, c):
+    """tabs_of() for a background job (no request context)."""
+    if u["role"] == "owner":
+        return {t: "full" for t in TABS}
+    key = perm_key(u["id"])
+    r = c.execute("SELECT data,deleted FROM docs WHERE path=?", ("perms/" + key,)).fetchone()
+    p = json.loads(r["data"]) if r and not r["deleted"] else {}
+    if p.get("status") != "approved" or p.get("uid") != u["id"]:
+        return {t: "none" for t in TABS}
+    t = p.get("tabs") or {}
+    return {k: (t.get(k) if t.get(k) in ("view", "full") else "none") for k in TABS}
+
+
+def on_monthly_report(y, m):
+    notify_users({"title": "הדוח החודשי מוכן", "body": f"הדוח של {reports.MONTHS[m - 1]} {y} נשמר. לחצו לפתיחה.",
+                  "url": "/report?month=%04d-%02d" % (y, m), "tag": "monthly-report"},
+                 want=lambda u, c: _tabs_with(u, c)["ledger"] != "none")
+
+
+def _month_diff(exp, today):
+    if not exp:
+        return None
+    y, m = map(int, str(exp).split("-")[:2])
+    return (y - today.year) * 12 + (m - today.month)
+
+
+def daily_alerts_job(force=False):
+    """פעם ביום (מ־08:00) נשלחת תזכורת קצרה, רק אם יש משהו לטפל בו."""
+    now = datetime.now()
+    if not force and now.hour < 8:
+        return 0
+    con = sqlite3.connect(DB_PATH, timeout=30)
+    con.row_factory = sqlite3.Row
+    try:
+        today = now.strftime("%Y-%m-%d")
+        r = con.execute("SELECT v FROM settings WHERE k='push_daily'").fetchone()
+        if not force and r and r["v"] == today:
+            return 0
+        if not con.execute("SELECT 1 FROM push_subs LIMIT 1").fetchone():
+            return 0
+        items = _live_docs("items", con)
+        boxes = _live_docs("boxes", con)
+        meta = next((m for m in _live_docs("meta", con) if m.get("id") == "main"), {})
+        expired = sum(1 for i in items if int(i.get("qty") or 0) > 0 and (_month_diff(i.get("exp"), now) or 0) < 0)
+        soon = sum(1 for i in items if int(i.get("qty") or 0) > 0 and _month_diff(i.get("exp"), now) == 0)
+        low = []
+        for k, mn in (meta.get("mins") or {}).items():
+            name, _, loc = k.partition("||")
+            have = sum(int(i.get("qty") or 0) for i in items if i.get("name") == name and i.get("loc") == loc)
+            if mn and have < int(mn):
+                low.append(name)
+        long_out = sum(1 for b in boxes if b.get("status") == "signed" and b.get("since") and (time.time() * 1000 - b["since"]) > 14 * 864e5)
+        empty = sum(1 for b in boxes if b.get("status") == "empty")
+        box_exp = sum(1 for b in boxes if b.get("status") != "empty" and any((_month_diff(c.get("exp"), now) is not None and _month_diff(c.get("exp"), now) <= 0) for c in (b.get("contents") or [])))
+
+        def lines_for(u, c):
+            t = _tabs_with(u, c)
+            out = []
+            if t["inventory"] != "none" or t["dashboard"] != "none":
+                if expired: out.append("פריט אחד פג תוקף" if expired == 1 else f"{expired} פריטים פגי תוקף")
+                if soon: out.append("פריט אחד פג החודש" if soon == 1 else f"{soon} פריטים פגים החודש")
+                if low: out.append("מלאי נמוך: " + ", ".join(sorted(set(low))))
+            if t["drugkits"] != "none":
+                if box_exp: out.append("פקל אחד עם סם שפג או פג החודש" if box_exp == 1 else f"{box_exp} פקלים עם סם שפג או פג החודש")
+                if long_out: out.append("פקל אחד חתום יותר משבועיים" if long_out == 1 else f"{long_out} פקלים חתומים יותר משבועיים")
+                if empty: out.append("פקל אחד ריק ממתין למילוי" if empty == 1 else f"{empty} פקלים ריקים ממתינים למילוי")
+            return out
+
+        sent = 0
+        for u in con.execute("SELECT DISTINCT u.* FROM push_subs p JOIN users u ON u.id=p.uid WHERE u.role!='blocked'").fetchall():
+            ls = lines_for(u, con)
+            if ls:
+                sent += notify_users({"title": "ניהול מלאי – תזכורת יומית", "body": " · ".join(ls), "url": "/#dashboard", "tag": "daily"},
+                                     only_uid=u["id"], con=con)
+        con.execute("INSERT INTO settings(k,v) VALUES('push_daily',?) ON CONFLICT(k) DO UPDATE SET v=excluded.v", (today,))
+        con.commit()
+        return sent
+    finally:
+        con.close()
+
 # ---------------------------------------------------------------- automatic backup
 BACKUP_DIR = os.environ.get("INV_BACKUP_DIR", os.path.join(BASE, "backups", "auto"))
 BACKUP_KEEP = int(os.environ.get("INV_BACKUP_KEEP", "30"))
@@ -775,7 +983,18 @@ def backup_loop():
                 print("גיבוי אוטומטי נשמר:", done, flush=True)
         except Exception as e:  # לא מפילים את השרת בגלל גיבוי
             print("הגיבוי האוטומטי נכשל:", e, flush=True)
-        time.sleep(60 * 60)  # בודקים כל שעה אם כבר יש גיבוי להיום
+        try:
+            rep = monthly_report_job()
+            if rep:
+                print("דוח חודשי נשמר:", rep[2], flush=True)
+                on_monthly_report(rep[0], rep[1])
+        except Exception as e:
+            print("הדוח החודשי נכשל:", e, flush=True)
+        try:
+            daily_alerts_job()
+        except Exception as e:
+            print("התראות יומיות נכשלו:", e, flush=True)
+        time.sleep(15 * 60)  # בודקים כל רבע שעה: גיבוי יומי, דוח חודשי ותזכורת יומית
 
 
 # ---------------------------------------------------------------- run

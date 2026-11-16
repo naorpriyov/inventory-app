@@ -37,7 +37,11 @@ class Client:
         r = urllib.request.Request(self.base + path, data=data, method=method, headers=h)
         try:
             with self.op.open(r, timeout=20) as resp:
-                return resp.status, json.loads(resp.read() or b"{}"), resp.headers
+                raw_body = resp.read() or b"{}"
+                try:
+                    return resp.status, json.loads(raw_body), resp.headers
+                except ValueError:
+                    return resp.status, {"html": raw_body.decode("utf-8", "replace")}, resp.headers
         except urllib.error.HTTPError as e:
             try:
                 j = json.loads(e.read() or b"{}")
@@ -117,6 +121,18 @@ def run(base):
     check("היומן כולל את השינויים", any(r["path"] == "ledger/g1" and r["username"] == "עובד.בדיקה" for r in rows))
     check("היומן כולל כניסות", any(r["op"] == "login" for r in rows) or any(r["op"] == "set" for r in rows))
     check("עובד לא יכול לקרוא את היומן", emp.call("GET", "/api/admin/audit")[0] == 403)
+
+    section("דוח חודשי והתראות")
+    st, _, hd = owner.call("GET", "/report?month=2026-11")
+    check("המנהל פותח דוח חודשי", st == 200)
+    check("עובד בלי גישה לספר הסמים לא פותח דוח", emp.call("GET", "/report?month=2026-11")[0] == 403)
+    check("חודש לא תקין נדחה", owner.call("GET", "/report?month=2026-13")[0] == 400)
+    k = owner.call("GET", "/api/push/key")[1].get("key", "")
+    check("מפתח ציבורי להתראות", len(k) > 60)
+    check("מנוי לא תקין נדחה", owner.call("POST", "/api/push/subscribe", {"sub": {"endpoint": "http://x"}})[0] == 400)
+    sub = {"endpoint": "https://push.example.invalid/abc", "keys": {"p256dh": "x", "auth": "y"}}
+    check("רישום מכשיר להתראות", owner.call("POST", "/api/push/subscribe", {"sub": sub})[0] == 200)
+    check("ביטול מכשיר", owner.call("POST", "/api/push/unsubscribe", {"endpoint": sub["endpoint"]})[0] == 200)
 
     section("אבטחה")
     check("בקשה שאינה JSON נדחית", emp.call("POST", "/api/me/password", raw=b"old=a&new=b", headers={"Content-Type": "application/x-www-form-urlencoded"})[0] == 415)

@@ -107,6 +107,10 @@ function shellDashboard(){
   <section class="rem" id="dRem" aria-live="polite"></section>
   <section id="dHero" aria-live="polite"></section>
   <section class="stats" id="dStats" aria-label="סיכום מלאי"></section>
+  <div class="viz-wrap">
+    <section class="panel viz" aria-labelledby="hUse"><div class="viz-h"><h2 id="hUse">צריכה חודשית לפי סם</h2><button class="btn sm" type="button" data-viz-table="use" id="vUseT">טבלה</button></div><p class="sub">החתמות, החתמות מערכות ושימוש מפקלים, פחות זיכויים. 6 החודשים האחרונים.</p><div id="vUse"></div></section>
+    <section class="panel viz" aria-labelledby="hWhere"><div class="viz-h"><h2 id="hWhere">איפה נמצאים הסמים</h2><button class="btn sm" type="button" data-viz-table="where" id="vWhereT">טבלה</button></div><p class="sub">יחידות במלאי החופשי מול יחידות בתוך ערכות ופקלים.</p><div id="vWhere"></div></section>
+  </div>
   <div class="grid2">
     <section class="panel" aria-labelledby="hAtt"><h2 id="hAtt">דורש טיפול</h2><div id="dAtt"></div></section>
     <section class="panel" aria-labelledby="hLocs" style="grid-column:1/-1;order:-1"><h2 id="hLocs">סיכום כמויות לפי סם ומיקום <a href="#locations" class="btn sm">לכל המיקומים</a></h2><div id="dLocs"></div></section>
@@ -195,6 +199,60 @@ const ICONS={
   x:SVG('<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>'),
   kit:SVG('<rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>')
 };
+/* ---------- dashboard charts (dataviz method: single-series small multiples + 2-series stacked bars) ---------- */
+const USE_TYPES={sign:1,'kit-sign':1,'box-use':1};
+function chartDrugs(){ return DRUGS.map(d=>d[0]); }
+function last6Months(){ const out=[], n=new Date(); for(let i=5;i>=0;i--){ const d=new Date(n.getFullYear(),n.getMonth()-i,1); out.push({y:d.getFullYear(),m:d.getMonth(),key:d.getFullYear()+'-'+(d.getMonth()+1),label:MONTHS[d.getMonth()].slice(0,3)}); } return out; }
+function usageByMonth(){
+  const months=last6Months(), idx=new Map(months.map((m,i)=>[m.key,i])), res={};
+  chartDrugs().forEach(d=>res[d]=months.map(()=>0));
+  Object.values(S.ledger).forEach(l=>{ const t=new Date(l.at), i=idx.get(t.getFullYear()+'-'+(t.getMonth()+1)); if(i==null||!res[l.name]) return;
+    if(USE_TYPES[l.type]) res[l.name][i]+=(+l.outQty||0); else if(l.type==='cancel') res[l.name][i]-=(+l.inQty||0); });
+  Object.values(res).forEach(a=>a.forEach((v,i)=>{ if(v<0) a[i]=0; }));
+  return {months,res};
+}
+const vizTip=(()=>{ let el=null; return { show(target,html){ if(!el){ el=document.createElement('div'); el.className='viz-tip'; el.setAttribute('role','tooltip'); document.body.appendChild(el); }
+    el.innerHTML=html; el.hidden=false; const r=target.getBoundingClientRect(), w=el.offsetWidth, h=el.offsetHeight;
+    let x=r.left+r.width/2-w/2, y=r.top-h-8; if(y<8) y=r.bottom+8; x=Math.max(8,Math.min(x,innerWidth-w-8)); el.style.left=x+'px'; el.style.top=y+'px'; },
+  hide(){ if(el) el.hidden=true; } }; })();
+let vizTable={use:false,where:false};
+function renderCharts(){
+  const vu=$('#vUse'), vw=$('#vWhere'); if(!vu||!vw) return;
+  /* 1) monthly usage – small multiples, one hue, shared scale */
+  const {months,res}=usageByMonth(); const drugs=chartDrugs();
+  const max=Math.max(1,...drugs.flatMap(d=>res[d]));
+  const tickMax=max<=5?5:max<=10?10:Math.ceil(max/10)*10;
+  if(vizTable.use){
+    vu.innerHTML=`<div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th scope="col">סם</th>${months.map(m=>`<th scope="col">${esc(m.label)}</th>`).join('')}</tr></thead><tbody>${drugs.map(d=>`<tr><th scope="row" style="background:none;color:var(--ink)">${esc(d)}</th>${res[d].map(v=>`<td class="num">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  } else {
+    const cols=vu.clientWidth<420?2:3;
+    const W=Math.max(140,Math.floor((vu.clientWidth-(cols-1)*18)/cols)),H=96,top=16,base=74,bw=Math.min(20,Math.floor(W/6)-8);
+    vu.innerHTML=`<div class="viz-sm-grid" style="grid-template-columns:repeat(${cols},1fr)">${drugs.map(d=>{ const a=res[d], total=a.reduce((s,v)=>s+v,0);
+      const bars=a.map((v,i)=>{ const cx=W-(i+0.5)*(W/6); /* RTL: newest month on the left */ const hgt=v?Math.max(3,(v/tickMax)*(base-top)):0; const x=cx-bw/2, y=base-hgt, r=Math.min(4,hgt);
+        const path=hgt?`<path class="viz-bar" d="M${x},${base}V${y+r}Q${x},${y} ${x+r},${y}H${x+bw-r}Q${x+bw},${y} ${x+bw},${y+r}V${base}Z"/>`:'';
+        return `${path}<rect class="viz-hit" x="${cx-(W/12)}" y="${top-12}" width="${W/6}" height="${base-top+30}" tabindex="0" data-tip="${esc(months[i].label)} ${months[i].y}|${v}|${esc(d)}" aria-label="${esc(d)}, ${esc(MONTHS[months[i].m])}: ${v}"></rect><text class="viz-x" x="${cx}" y="${base+16}" text-anchor="middle">${esc(months[i].label)}</text>${i===5&&v?`<text class="viz-val" x="${cx}" y="${y-5}" text-anchor="middle">${v}</text>`:''}`; }).join('');
+      return `<figure class="viz-sm"><figcaption><strong>${esc(d)}</strong><span>${total} ב־6 חודשים</span></figcaption><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="צריכה חודשית של ${esc(d)}"><line class="viz-base" x1="0" x2="${W}" y1="${base}" y2="${base}"/>${bars}</svg></figure>`; }).join('')}</div>
+      <p class="hint viz-note">אותו קנה מידה לכל הסמים (עד ${tickMax} בחודש). הזמן נע מימין לשמאל: החודש הנוכחי משמאל.</p>`;
+  }
+  /* 2) where the drugs are – stacked horizontal bars: free stock vs kits & boxes */
+  const rows=drugs.map(d=>({d,free:stockOf(d),kit:kitStockOf(d)})).filter(r=>r.free||r.kit);
+  const mx=Math.max(1,...rows.map(r=>r.free+r.kit));
+  if(vizTable.where){
+    vw.innerHTML=rows.length?`<div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th scope="col">סם</th><th scope="col">מלאי חופשי</th><th scope="col">בערכות ובפקלים</th><th scope="col">סה״כ</th></tr></thead><tbody>${rows.map(r=>`<tr><th scope="row" style="background:none;color:var(--ink)">${esc(r.d)}</th><td class="num">${r.free}</td><td class="num">${r.kit}</td><td class="num">${r.free+r.kit}</td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">אין מלאי.</p>';
+  } else {
+    vw.innerHTML=`<div class="viz-legend" aria-hidden="true"><span><i class="s1"></i>מלאי חופשי</span><span><i class="s2"></i>בערכות ובפקלים</span></div>`+(rows.length?rows.map(r=>`<div class="viz-row"><span class="viz-name">${esc(r.d)}</span><div class="viz-track" role="img" aria-label="${esc(r.d)}: מלאי חופשי ${r.free}, בערכות ובפקלים ${r.kit}">
+      ${r.free?`<span class="viz-seg s1" style="width:${r.free/mx*100}%" tabindex="0" data-tip="מלאי חופשי|${r.free}|${esc(r.d)}"></span>`:''}${r.kit?`<span class="viz-seg s2" style="width:${r.kit/mx*100}%" tabindex="0" data-tip="בערכות ובפקלים|${r.kit}|${esc(r.d)}"></span>`:''}</div><span class="viz-tot">${r.free+r.kit}</span></div>`).join(''):'<p class="empty">אין מלאי.</p>');
+  }
+  $('#vUseT').textContent=vizTable.use?'גרף':'טבלה'; $('#vWhereT').textContent=vizTable.where?'גרף':'טבלה';
+}
+const tipFor=t=>{ const [a,v,d]=t.dataset.tip.split('|'); return `<strong>${esc(v)}</strong> ${esc(d)}<br><span>${esc(a)}</span>`; };
+document.addEventListener('pointerover',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]'); if(t) vizTip.show(t,tipFor(t)); });
+document.addEventListener('pointerout',e=>{ if(e.target.closest&&e.target.closest('[data-tip]')) vizTip.hide(); });
+document.addEventListener('focusin',e=>{ const t=e.target.closest&&e.target.closest('[data-tip]'); if(t) vizTip.show(t,tipFor(t)); else vizTip.hide(); });
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-viz-table]'); if(!b) return; vizTable[b.dataset.vizTable]=!vizTable[b.dataset.vizTable]; renderCharts(); });
+addEventListener('scroll',()=>vizTip.hide(),{passive:true});
+let vizRT=null; addEventListener('resize',()=>{ clearTimeout(vizRT); vizRT=setTimeout(()=>{ if(route==='dashboard') renderCharts(); },150); });
+
 function renderDashboard(){
   const c=counts(); const alerts=c.soon+c.expired;
   const h=$('#dHero');
@@ -311,7 +369,7 @@ function renderData(){
   b.hidden=!n; b.textContent=n; b.setAttribute('aria-label',`${n} התראות תוקף`);
   updatePermButtons();
   if(applyAccess()===false) return;
-  if(route==='dashboard') renderDashboard();
+  if(route==='dashboard'){ renderDashboard(); renderCharts(); }
   else if(route==='inventory') renderInvTable();
   else if(route==='drugkits') renderBoxes();
   else if(route==='locations') renderLocations();
@@ -793,7 +851,7 @@ const lgNote=l=>(TYPE_HE[l.type]||l.type)+(l.loc?' · '+l.loc:'')+(l.batch?' · 
 function shellLedger(){
   $('#main').innerHTML=`
   <div class="page-head"><div><h1>ספר סמים</h1><p class="sub">מעקב הכנסה, הוצאה וספירת סמים לכל פריט, לפי נספח ב׳.</p></div>
-  <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn" type="button" id="lgCsv">ייצוא הפריט ל־CSV</button><button class="btn primary" type="button" id="lgBi">דוח דו־שבועי לכל הסמים</button></div></div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn" type="button" id="lgRep">דוח חודשי</button><button class="btn" type="button" id="lgCsv">ייצוא הפריט ל־CSV</button><button class="btn primary" type="button" id="lgBi">דוח דו־שבועי לכל הסמים</button></div></div>
   <div id="notice"></div>
   <div class="toolbar" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
     <div class="field"><label for="lgD">שם פריט</label><select id="lgD"></select></div>
@@ -803,7 +861,10 @@ function shellLedger(){
   $('#lgP').value=lgPeriod;
   $('#lgD').addEventListener('change',e=>{ lgDrug=e.target.value; renderLedger(); });
   $('#lgP').addEventListener('change',e=>{ lgPeriod=e.target.value; renderLedger(); });
-  $('#lgCsv').addEventListener('click',exportLedgerCsv); $('#lgBi').addEventListener('click',exportBiweekly);
+  $('#lgCsv').addEventListener('click',exportLedgerCsv);
+  $('#lgRep').addEventListener('click',()=>{ const n=new Date(), opts=[]; for(let i=1;i<=12;i++){ const d=new Date(n.getFullYear(),n.getMonth()-i+1,1); opts.push([`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,`${MONTHS[d.getMonth()]} ${d.getFullYear()}${i===1?' (החודש, עד היום)':''}`]); }
+    openGen('דוח חודשי',`<p class="sub" style="margin:0">הדוח נפתח בחלון חדש. משם אפשר להדפיס או לשמור כ־PDF. בתחילת כל חודש נשמר אוטומטית עותק של הדוח של החודש הקודם.</p>
+      <div class="field"><label for="repM">חודש</label><select id="repM">${opts.map(([v,l],i)=>`<option value="${v}" ${i===1?'selected':''}>${esc(l)}</option>`).join('')}</select></div>`,'פתיחת הדוח',async()=>{ window.open('/report?month='+$('#repM').value,'_blank','noopener'); return true; }); }); $('#lgBi').addEventListener('click',exportBiweekly);
 }
 function renderLedger(){
   const sel=$('#lgD'); if(!sel) return; const names=ledgerNames(); if(!names.includes(lgDrug)) lgDrug=names.find(n=>Object.values(S.ledger).some(l=>l.name===n))||names[0]||'';
