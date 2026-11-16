@@ -171,5 +171,63 @@ td{{font-variant-numeric:tabular-nums}} tr.warn td{{background:var(--warn)}} tr.
 בחודש הזה: מולאו {box_month.get('box-fill', 0)} יח׳, נוצלו {box_month.get('box-use', 0)} יח׳, הוחזרו למלאי {box_month.get('box-return', 0)} יח׳.</p>
 {''.join(f"<p class='sub'>⚠ פקל {e(b.get('id', ''))}: תוקף {fmt_exp(x)}{' (פג)' if d < 0 else ''}</p>" for b, x, d in box_exp)}
 <div style="overflow-x:auto;margin-top:8px"><table><thead><tr><th>פקל חתום</th><th>מיקום</th><th>ליד מי</th><th>מאז</th></tr></thead><tbody>{signed_rows}</tbody></table></div>
+{sap_section(docs, start, end)}
 <div class="sign"><div>שם וחתימת האחראי</div><div>תאריך</div></div>
 </div></main></body></html>"""
+
+
+# ---------------------------------------------------------------- השוואה לסאפ
+# סאפ מוריד שימוש רק אחרי פתק הצריכה החודשי, ולכן משווים את סאפ מול:
+# המלאי אצלנו (חופשי + ערכות + פקלים) + הצריכה שעוד לא ירדה בסאפ (מאז תאריך החיתוך).
+PENDING_OUT = {"sign", "kit-sign", "box-use", "out"}
+
+
+def our_stock(docs, name):
+    free = sum(n(i.get("qty")) for i in docs.get("items", []) if i.get("name") == name)
+    kits = sum(n(c.get("qty")) for k in docs.get("kits", []) if k.get("status") != "issued"
+               for c in (k.get("contents") or []) if c.get("name") == name)
+    boxes = sum(n(c.get("qty")) for b in docs.get("boxes", []) if b.get("status") != "empty"
+                for c in (b.get("contents") or []) if c.get("name") == name)
+    return free + kits + boxes
+
+
+def sap_state(docs):
+    snaps = sorted(docs.get("sap", []), key=lambda x: x.get("at") or 0)
+    if not snaps:
+        return None
+    last = snaps[-1]
+    meta = next((m for m in docs.get("sapmeta", []) if m.get("id") == "main"), {})
+    cutoff = meta.get("cutoff") or 0
+    ledger = docs.get("ledger", [])
+    names = []
+    for ln in last.get("lines") or []:
+        if ln.get("name") and ln["name"] not in names:
+            names.append(ln["name"])
+    rows = []
+    for name in names:
+        sap = sum(n(ln.get("qty")) for ln in last["lines"] if ln.get("name") == name)
+        ours = our_stock(docs, name)
+        pend = sum(n(l.get("outQty")) for l in ledger if l.get("name") == name and l.get("type") in PENDING_OUT and (l.get("at") or 0) > cutoff)
+        pend -= sum(n(l.get("inQty")) for l in ledger if l.get("name") == name and l.get("type") == "cancel" and (l.get("at") or 0) > cutoff)
+        pend = max(pend, 0)
+        rows.append({"name": name, "sap": sap, "ours": ours, "pending": pend, "diff": ours + pend - sap})
+    rec = sum(n(l.get("inQty")) for l in ledger if l.get("type") == "receive" and (l.get("at") or 0) > (last.get("at") or 0))
+    return {"at": last.get("at"), "by": last.get("byName") or last.get("byUser") or "", "rows": rows,
+            "short": [r for r in rows if r["diff"] < 0], "receipts_since": rec, "cutoff": cutoff,
+            "cutoff_date": meta.get("cutoffDate") or "", "snaps": snaps}
+
+
+def sap_section(docs, start, end):
+    st = sap_state(docs)
+    if not st:
+        return "<h2>השוואה לסאפ</h2><p class='sub'>עוד לא הוזן מלאי סאפ.</p>"
+    rows = "".join(
+        f"<tr class=\"{'bad' if r['diff'] < 0 else ''}\"><th>{e(r['name'])}</th><td>{r['sap']}</td><td>{r['ours']}</td><td>{r['pending']}</td>"
+        f"<td><b>{'+' if r['diff'] > 0 else ''}{r['diff']}</b></td><td>{'חוסר' if r['diff'] < 0 else 'תקין'}</td></tr>" for r in st["rows"])
+    upd = [x for x in st["snaps"] if start <= (x.get("at") or 0) < end]
+    upd_txt = ", ".join(f"{fmt_dt(x['at'])} ({e(x.get('byName') or x.get('byUser') or '')})" for x in upd) or "אין"
+    return (f"<h2>השוואה לסאפ (נכון להפקת הדוח)</h2><p class='sub'>עדכון סאפ אחרון: {fmt_dt(st['at'])}"
+            f"{' · ' + e(st['by']) if st['by'] else ''} · הצריכה הורדה בסאפ עד: {e(st['cutoff_date']) or 'לא סומן'}"
+            f"{' · התקבלו ' + str(st['receipts_since']) + ' יח׳ מאז העדכון האחרון' if st['receipts_since'] else ''}.</p>"
+            "<div style='overflow-x:auto'><table><thead><tr><th>סם</th><th>בסאפ</th><th>אצלנו</th><th>צריכה שעוד לא ירדה בסאפ</th><th>פער</th><th>מצב</th></tr></thead>"
+            f"<tbody>{rows}</tbody></table></div><p class='note'>עדכוני מלאי סאפ בחודש: {upd_txt}</p>")

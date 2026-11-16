@@ -85,7 +85,7 @@ def run(base):
     check("לא מאושר: לא רואה נתונים", set(emp.docs()) == {"perms/" + key})
     check("לא יכול לתת לעצמו הרשאות", emp.put("perms/" + key, {"id": key, "uid": me["id"], "name": "x", "status": "pending", "tabs": {"inventory": "full"}}) == 403)
     perm = {"id": key, "uid": me["id"], "name": "עובד.בדיקה", "status": "approved", "flags": {"receive": True, "lower": True, "edit": False, "count": True},
-            "tabs": {t: "none" for t in ["dashboard", "inventory", "drugkits", "sign", "ledger", "count", "locations"]}}
+            "tabs": {t: "none" for t in ["dashboard", "inventory", "drugkits", "sign", "ledger", "sap", "count", "locations"]}}
     perm["tabs"]["inventory"] = "view"
     owner.put("perms/" + key, perm)
     d = emp.docs()
@@ -121,6 +121,32 @@ def run(base):
     check("היומן כולל את השינויים", any(r["path"] == "ledger/g1" and r["username"] == "עובד.בדיקה" for r in rows))
     check("היומן כולל כניסות", any(r["op"] == "login" for r in rows) or any(r["op"] == "set" for r in rows))
     check("עובד לא יכול לקרוא את היומן", emp.call("GET", "/api/admin/audit")[0] == 403)
+
+    section("השוואה לסאפ")
+    snap = {"id": "s1", "at": 1, "lines": [{"name": "מורפיום", "sku": "960003470", "batch": "M1", "exp": "2030-01-01", "qty": 12}]}
+    check("בלי גישה למסך: לא יכול להזין מלאי סאפ", emp.put("sap/s1", snap) == 403)
+    perm["tabs"]["sap"] = "full"
+    owner.put("perms/" + key, perm)
+    check("גישה מלאה: מזין מלאי סאפ", emp.put("sap/s1", snap) == 200)
+    check("עדכון סאפ קיים לא ניתן לשינוי", emp.put("sap/s1", dict(snap, lines=[])) == 403)
+    check("גם המנהל לא יכול למחוק עדכון סאפ", owner.call("DELETE", "/api/doc?path=sap/s1")[0] == 403)
+    check("גם המנהל לא יכול למחוק רישום בספר הסמים", owner.call("DELETE", "/api/doc?path=ledger/g1")[0] == 403)
+    check("גם המנהל לא יכול לשנות רישום בספר הסמים", owner.put("ledger/g1", {"id": "g1", "name": "מורפיום", "type": "out", "outQty": 1}) == 403)
+    import importlib, sys as _s
+    _s.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    reports = importlib.import_module("reports")
+    d = owner.docs()
+    docs = {k: [v for p_, v in d.items() if p_.startswith(k + "/")] for k in ("items", "kits", "boxes", "ledger", "sap", "sapmeta")}
+    st = reports.sap_state(docs)
+    row = st["rows"][0]
+    # ours: 7 free + 3 in box SA1 = 10, pending: 3 (ledger/g1 "out") -> 13 vs SAP 12 -> +1
+    check("חישוב ההשוואה: אצלנו 10, ממתין 3, סאפ 12 = פער ‎+1", (row["ours"], row["pending"], row["diff"]) == (10, 3, 1))
+    owner.put("sapmeta/main", {"id": "main", "cutoff": int(time.time() * 1000) + 5000, "cutoffDate": "2099-01-01"})
+    d = owner.docs()
+    docs = {k: [v for p_, v in d.items() if p_.startswith(k + "/")] for k in ("items", "kits", "boxes", "ledger", "sap", "sapmeta")}
+    row = reports.sap_state(docs)["rows"][0]
+    check("אחרי סימון שהצריכה ירדה בסאפ: אין צריכה ממתינה, ומתגלה חוסר ‎−2", (row["pending"], row["diff"]) == (0, -2))
+    check("הדוח החודשי כולל את ההשוואה לסאפ", "השוואה לסאפ" in owner.call("GET", "/report?month=%04d-%02d" % (time.localtime().tm_year, time.localtime().tm_mon))[1].get("html", ""))
 
     section("דוח חודשי והתראות")
     st, _, hd = owner.call("GET", "/report?month=2026-11")

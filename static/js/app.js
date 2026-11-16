@@ -2,8 +2,8 @@
 (function(){
 'use strict';
 const DEFAULT_LOCS=['כספת אחורית','כספת קידמית'];
-const COLS=['items','kits','locations','moves','catalog','batches','perms','ledger','counts','cancels','caregivers','meta','recon','boxes','boxtpl'];
-const S={items:{},kits:{},locations:{},moves:{},catalog:{},batches:{},perms:{},ledger:{},counts:{},cancels:{},caregivers:{},meta:{},recon:{},boxes:{},boxtpl:{}};
+const COLS=['items','kits','locations','moves','catalog','batches','perms','ledger','counts','cancels','caregivers','meta','recon','boxes','boxtpl','sap','sapmeta'];
+const S={items:{},kits:{},locations:{},moves:{},catalog:{},batches:{},perms:{},ledger:{},counts:{},cancels:{},caregivers:{},meta:{},recon:{},boxes:{},boxtpl:{},sap:{},sapmeta:{}};
 const LS_KEY='inv-data-v1', FS_KEY='inv-fs';
 let mode='loading', db=null, loadErr=false, route='dashboard';
 let user=null, me={id:null,isOwner:false}, signPrefill=null;
@@ -57,7 +57,7 @@ function subscribe(){
   const t=setTimeout(()=>{ if(pending.size){ loadErr=true; renderData(); } },10000);
   const done=c=>{ if(pending.delete(c) && !pending.size){ clearTimeout(t); mode='db'; } renderData(); };
   const onErr=c=>e=>{ if(e&&e.code==='revoked'){ toast('הגישה לנתונים הסתיימה.'); } done(c); };
-  ['items','kits','locations','catalog','batches','perms','ledger','counts','cancels','caregivers','meta','recon','boxes','boxtpl'].forEach(c=>{
+  ['items','kits','locations','catalog','batches','perms','ledger','counts','cancels','caregivers','meta','recon','boxes','boxtpl','sap','sapmeta'].forEach(c=>{
     db.collection(c).onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=Object.assign({},d.data(),{id:d.id});}); S[c]=o; done(c); }, onErr(c));
   });
   db.collection('moves').orderBy('at','desc').limit(300).onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=Object.assign({},d.data(),{id:d.id});}); S.moves=o; done('moves'); }, onErr('moves'));
@@ -381,6 +381,7 @@ function renderData(){
   if(route==='dashboard'){ renderDashboard(); renderCharts(); }
   else if(route==='inventory') renderInvTable();
   else if(route==='drugkits') renderBoxes();
+  else if(route==='sap') renderSap();
   else if(route==='locations') renderLocations();
   else if(route==='sign') renderSign();
   else if(route==='ledger') renderLedger();
@@ -394,7 +395,7 @@ const PERM_FLAGS=[['receive','קבלת מלאי'],['lower','הורדה'],['edit'
 function canDo(f){ if(mode!=='db') return true; if(me.isOwner) return true; const p=me.id&&S.perms[permKey(me.id)]; if(!(p&&p.status==='approved'&&p.uid===me.id)) return false; return !!(p.flags||{lower:true})[f]; }
 
 /* ---------- screen access per user: none / view / full ---------- */
-const TABS=[['dashboard','לוח בקרה'],['inventory','מלאי'],['drugkits','פקלי סמים'],['sign','החתמה'],['ledger','ספר סמים'],['count','ספירת מלאי'],['locations','מיקומים וערכות']];
+const TABS=[['dashboard','לוח בקרה'],['inventory','מלאי'],['drugkits','פקלי סמים'],['sign','החתמה'],['ledger','ספר סמים'],['sap','השוואה לסאפ'],['count','ספירת מלאי'],['locations','מיקומים וערכות']];
 const LVLS=[['none','ללא גישה'],['view','צפייה בלבד'],['full','גישה מלאה']];
 const accessReady=()=>mode==='db'&&!!me.id;
 function tabLevel(t){
@@ -696,7 +697,8 @@ function kitStockExcl(name,kid){ return Object.values(S.kits).filter(k=>k.id!==k
 function kitTotals(k){ const t={}; if(k&&k.status!=='issued') (k.contents||[]).forEach(c=>{ t[c.name]=(t[c.name]||0)+(+c.qty||0); }); return t; }
 function balAfter(o){ return Object.values(S.items).filter(i=>i.name===o.name&&i.id!==o.id).reduce((t,i)=>t+(+i.qty||0),0)+(+o.qty||0); }
 function skuOf(name){ const it=Object.values(S.items).find(i=>i.name===name&&i.sku); if(it) return it.sku; const d=DRUGS.find(x=>x[0]===name); if(d) return d[1]; const c=Object.values(S.catalog).find(x=>x.name===name); return c?c.sku:''; }
-function ledgerAdd(e){ const o=Object.assign({id:uid('g'),at:Date.now(),by:me.id||'',byName:myName||''},e); if(!o.sku) o.sku=skuOf(o.name); return put('ledger',clean(o)); }
+function ledgerAdd(e){ const o=Object.assign({id:uid('g'),at:Date.now(),by:me.id||'',byName:myName||''},e); if(!o.sku) o.sku=skuOf(o.name);
+  return put('ledger',clean(o)).then(ok=>{ if(ok&&o.type==='receive'&&typeof sapAfterReceive==='function') sapAfterReceive(o); return ok; }); }
 function signLedger(o,n,rec){
   return ledgerAdd({name:o.name,sku:o.sku,itemId:o.id,batch:o.batch||'',exp:o.exp||'',loc:o.loc,type:'sign',outQty:n,balance:balAfter(o),kitBalance:kitStockOf(o.name),voucher:'פתק החתמה',note:'פתק החתמה · '+(rec.reason||'')+(rec.remarks?' · '+rec.remarks:''),noteTs:rec.ts,byName:rec.name});
 }
@@ -823,6 +825,9 @@ function renderReminders(){
   if(dr===null||dr>=14) out.push(`<div class="notice"><span>הדוח הדו־שבועי של ספר הסמים מוכן להפקה.</span><a class="btn sm" href="#ledger">לספר הסמים</a></div>`);
   const low=lowStock(); if(low.length) out.push(`<div class="notice bad"><span><strong>מלאי נמוך:</strong> ${low.map(x=>`${esc(x.name)} ב${esc(x.loc)} (${x.have}, מינימום ${x.min})`).join(', ')}</span></div>`);
   const rc=unreconciled(); if(rc.length) out.push(`<div class="notice bad"><span><strong>${rc.length} פתקי החתמה לא ירדו מהמלאי.</strong> ${rc.slice(0,5).map(n=>`${esc((n.date||'').split('-').reverse().join('/'))} ${esc(n.name)} (${esc((n.items||[]).map(it=>(it.drug==='other'?it.name:rxHe(it.drug))+' '+it.qty).join(', '))})`).join('; ')}. עדכנו את המלאי ידנית ואז סמנו כטופל.</span><button class="btn sm" type="button" data-recon-all>סימון כטופל</button></div>`);
+  if(canSee('sap')&&sapLast()){ const sh=sapRows().filter(r=>r.diff<0), rc=sapReceiptsSince();
+    if(sh.length) out.push(`<div class="notice bad"><span><strong>חוסר מול סאפ:</strong> ${sh.map(r=>esc(r.name)+' '+r.diff).join(', ')}</span><a class="btn sm" href="#sap">להשוואה לסאפ</a></div>`);
+    if(rc) out.push(`<div class="notice"><span><strong>התקבלו ${rc} יח׳ מאז עדכון סאפ האחרון.</strong> אחרי שהמשלוח נקלט בסאפ, עדכנו את מלאי סאפ.</span><a class="btn sm" href="#sap">להשוואה לסאפ</a></div>`); }
   if(canSee('drugkits')){ const bs=Object.values(S.boxes), em=bs.filter(b=>b.status==='empty').length, lg=bs.filter(b=>b.status==='signed'&&bxDays(b.since)>=14).length;
     if(em||lg) out.push(`<div class="notice"><span><strong>פקלי סמים:</strong> ${[em?em+' קופסאות ריקות ממתינות למילוי':'',lg?lg+' קופסאות חתומות יותר משבועיים':''].filter(Boolean).join(', ')}.</span><a class="btn sm" href="#drugkits">לפקלי סמים</a></div>`); }
   el.innerHTML=out.join('');
@@ -841,7 +846,7 @@ function openMins(){
 /* ---------- backup / export ---------- */
 async function doBackup(){
   const data={exportedAt:new Date().toISOString()};
-  ['items','kits','locations','catalog','batches','ledger','counts','cancels','caregivers','meta','moves','boxes','boxtpl'].forEach(c=>{ data[c]=Object.values(S[c]||{}); });
+  ['items','kits','locations','catalog','batches','ledger','counts','cancels','caregivers','meta','moves','boxes','boxtpl','sap','sapmeta'].forEach(c=>{ data[c]=Object.values(S[c]||{}); });
   if(await saveFile(`גיבוי-מלאי-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(data,null,1),'application/json')) toast('הגיבוי נשמר');
 }
 async function exportInvCsv(){
@@ -972,18 +977,18 @@ async function saveCount(){
 /* ---------- routing ---------- */
 function go(){
   const h=(location.hash||'').slice(1);
-  let r=['dashboard','inventory','drugkits','locations','notes','sign','ledger','count','noaccess'].includes(h)?h:(h.startsWith('loc-')?'locations':'dashboard');
+  let r=['dashboard','inventory','drugkits','locations','notes','sign','ledger','sap','count','noaccess'].includes(h)?h:(h.startsWith('loc-')?'locations':'dashboard');
   // מסך שאין למשתמש גישה אליו: עוברים למסך הראשון שמותר, או לעמוד "אין גישה"
   if(accessReady()&&!me.isOwner){ if(r==='noaccess'?firstTab():!canSee(r)){ r=firstTab()||'noaccess'; history.replaceState(null,'','#'+r); } }
   else if(r==='noaccess') r='dashboard';
   const changed=r!==route||!$('#main').children.length; route=r;
   document.querySelectorAll('nav.tabs a').forEach(a=>{ if(a.dataset.route===r){ a.setAttribute('aria-current','page'); revealTab(a); } else a.removeAttribute('aria-current'); });
   closeMenu();
-  if(changed){ ({dashboard:shellDashboard,inventory:shellInventory,drugkits:shellDrugkits,locations:shellLocations,notes:shellNotes,sign:shellSign,ledger:shellLedger,count:shellCount,noaccess:shellNoAccess})[r](); renderData(); }
+  if(changed){ ({dashboard:shellDashboard,inventory:shellInventory,drugkits:shellDrugkits,sap:shellSap,locations:shellLocations,notes:shellNotes,sign:shellSign,ledger:shellLedger,count:shellCount,noaccess:shellNoAccess})[r](); renderData(); }
   else applyAccess();
   if(r==='sign'&&signPrefill) applyPrefill();
   if(h.startsWith('loc-')){ const el=document.getElementById(h); if(el){ el.scrollIntoView(); el.focus({preventScroll:true}); } }
-  document.title=({dashboard:'לוח בקרה',inventory:'מלאי',drugkits:'פקלי סמים',locations:'מיקומים וערכות',notes:'פתקי החתמה',sign:'החתמה',ledger:'ספר סמים',count:'ספירת מלאי',noaccess:'אין גישה'})[r]+' | ניהול מלאי';
+  document.title=({dashboard:'לוח בקרה',inventory:'מלאי',drugkits:'פקלי סמים',sap:'השוואה לסאפ',locations:'מיקומים וערכות',notes:'פתקי החתמה',sign:'החתמה',ledger:'ספר סמים',count:'ספירת מלאי',noaccess:'אין גישה'})[r]+' | ניהול מלאי';
 }
 window.addEventListener('hashchange',go);
 
@@ -1210,11 +1215,13 @@ function confirmDlg(title,text,ok,withNote){
   return new Promise(res=>{
     const d=$('#cfmDlg'); $('#cfmTitle').textContent=title; $('#cfmText').textContent=text; $('#cfmOk').textContent=ok;
     $('#cfmNoteWrap').hidden=!withNote; $('#cfmNote').value='';
-    let done=false;
+    let done=false, settled=false;
     const f=$('#cfmForm');
-    const sub=e=>{e.preventDefault(); done=true; d.close(); };
+    // resolves on the click itself, without waiting for the dialog's "close" event (which a browser may delay)
+    const finish=()=>{ if(settled) return; settled=true; f.removeEventListener('submit',sub); res(done?{note:$('#cfmNote').value.trim()}:null); };
+    const sub=e=>{e.preventDefault(); done=true; finish(); d.close(); };
     f.addEventListener('submit',sub,{once:true});
-    d.addEventListener('close',()=>{ f.removeEventListener('submit',sub); res(done?{note:$('#cfmNote').value.trim()}:null); },{once:true});
+    d.addEventListener('close',finish,{once:true});
     d.showModal(); setTimeout(()=>(withNote?$('#cfmNote'):$('#cfmOk')).focus(),30);
   });
 }
@@ -1482,6 +1489,135 @@ document.addEventListener('click',e=>{
   const ids=[...bx.sel], pick=st=>ids.filter(id=>S.boxes[id]&&S.boxes[id].status===st);
   ({sign:()=>{ const v=pick('vault'); v.length?bxSign(v):toast('אף קופסה שנבחרה לא נמצאת בכספת.'); },sealed:()=>{ const v=pick('signed'); v.length?bxSealed(v):toast('אף קופסה שנבחרה לא חתומה.'); },
     fill:()=>{ const v=pick('empty'); v.length?bxFill(v):toast('אף קופסה שנבחרה לא ריקה.'); },loc:()=>bxMove(ids),clear:()=>{ bx.sel.clear(); renderBoxes(); }})[t.dataset.bulk]();
+});
+
+/* ---------- השוואה לסאפ ----------
+   סאפ מוריד שימוש רק אחרי פתק הצריכה החודשי. לכן משווים את מלאי סאפ (שמוזן ידנית: סם, אצווה, תוקף, כמות) מול:
+   המלאי אצלנו (חופשי + ערכות + פקלים) + הצריכה שעוד לא ירדה בסאפ (מאז תאריך החיתוך). שווה או בפלוס = תקין, חוסר = אדום. */
+const SAP_PENDING={sign:1,'kit-sign':1,'box-use':1,out:1};
+let sapPrefill=null, sapRecTimer=null, sapRecQueue=[];
+const sapSnaps=()=>Object.values(S.sap).sort((a,b)=>(a.at||0)-(b.at||0));
+const sapLast=()=>{ const s=sapSnaps(); return s[s.length-1]||null; };
+const sapMeta=()=>S.sapmeta.main||{};
+const ourTotal=name=>STOCK_POOLS.reduce((t,p)=>t+p.qty(name),0);
+function sapPending(name){ const c=sapMeta().cutoff||0; let t=0;
+  Object.values(S.ledger).forEach(l=>{ if(l.name!==name||(l.at||0)<=c) return; if(SAP_PENDING[l.type]) t+=(+l.outQty||0); else if(l.type==='cancel') t-=(+l.inQty||0); });
+  return Math.max(0,t); }
+function sapRows(){ const last=sapLast(); if(!last) return []; const names=[];
+  (last.lines||[]).forEach(x=>{ if(x.name&&!names.includes(x.name)) names.push(x.name); });
+  return names.map(n=>{ const sap=(last.lines||[]).filter(x=>x.name===n).reduce((a,x)=>a+(+x.qty||0),0), ours=ourTotal(n), pend=sapPending(n);
+    return {name:n,sku:skuOf(n),sap,ours,pend,diff:ours+pend-sap}; }); }
+function sapReceiptsSince(){ const last=sapLast(); if(!last) return 0; return Object.values(S.ledger).filter(l=>l.type==='receive'&&(l.at||0)>(last.at||0)).reduce((t,l)=>t+(+l.inQty||0),0); }
+function ourBatches(){ const m=new Map(); const add=(o,q)=>{ if(!o.name||!q) return; const k=o.name+'|'+(o.batch||''); const v=m.get(k)||{name:o.name,batch:o.batch||'',exp:o.exp||'',qty:0}; v.qty+=q; if(!v.exp&&o.exp) v.exp=o.exp; m.set(k,v); };
+  Object.values(S.items).forEach(i=>add(i,+i.qty||0));
+  Object.values(S.kits).filter(k=>k.status!=='issued').forEach(k=>(k.contents||[]).forEach(c=>add(c,+c.qty||0)));
+  Object.values(S.boxes).filter(b=>b.status!=='empty').forEach(b=>(b.contents||[]).forEach(c=>add(c,+c.qty||0)));
+  return m; }
+const sapCan=()=>canFull('sap');
+const expShort=e=>e?fmtExp(e).slice(3):'ללא';
+
+function shellSap(){
+  $('#main').innerHTML=`
+  <div class="page-head"><div><h1>השוואה לסאפ</h1><p class="sub">מלאי סאפ מול המלאי אצלנו (חופשי + ערכות + פקלים) ועוד הצריכה שעוד לא ירדה בסאפ. שווה או בפלוס זה תקין, חוסר מסומן באדום.</p></div>
+  <div class="sap-acts" id="sapActs" style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn primary" type="button" data-sap="update">עדכון מלאי סאפ</button><button class="btn" type="button" data-sap="cutoff">הצריכה הורדה בסאפ</button></div></div>
+  <div id="notice"></div><div id="sapAlerts"></div>
+  <section class="panel" aria-labelledby="sapH1" style="margin-bottom:1rem"><h2 id="sapH1">השוואה לפי סם</h2><div id="sapMain" style="margin-top:.8rem"></div></section>
+  <section class="panel" aria-labelledby="sapH2" style="margin-bottom:1rem"><h2 id="sapH2">צריכה שעוד לא ירדה בסאפ, לפי יום</h2><p class="sub" style="margin:.2rem 0 .8rem">עוזר למלא את פתק הצריכה החודשי. כולל החתמות, החתמות מערכות, שימוש מפקלים והורדות ידניות, פחות זיכויים.</p><div id="sapDays"></div></section>
+  <section class="panel" aria-labelledby="sapH3" style="margin-bottom:1rem"><h2 id="sapH3">השוואה לפי אצווה ותוקף</h2><p class="sub" style="margin:.2rem 0 .8rem">לידיעה בלבד: הבדלים באצוות או בתוקף בין סאפ לבין המלאי אצלנו.</p><div id="sapBatches"></div></section>
+  <section class="panel" aria-labelledby="sapH4"><h2 id="sapH4">עדכוני סאפ קודמים</h2><div id="sapHist" style="margin-top:.8rem"></div></section>`;
+}
+function renderSap(){
+  if(!$('#sapMain')) return;
+  const can=sapCan(); $('#sapActs').hidden=!can;
+  const last=sapLast(), meta=sapMeta(), rows=sapRows(), rec=sapReceiptsSince(), short=rows.filter(r=>r.diff<0);
+  $('#sapAlerts').innerHTML=!last?`<div class="notice"><span>עוד לא הוזן מלאי סאפ. ${can?'לוחצים "עדכון מלאי סאפ" ומקלידים את מה שמופיע בסאפ: סם, אצווה, תוקף וכמות.':''}</span></div>`
+    :(short.length?`<div class="notice bad"><span><strong>חוסר מול סאפ:</strong> ${short.map(r=>`${esc(r.name)} ${r.diff}`).join(', ')}</span></div>`:`<div class="notice ok-n"><span><strong>הכול תקין:</strong> המלאי אצלנו שווה לסאפ או גדול ממנו בכל הסמים.</span></div>`)
+     +(rec?`<div class="notice warn"><span><strong>התקבלו ${rec} יח׳ מאז עדכון סאפ האחרון.</strong> אחרי שהמשלוח נקלט בסאפ, עדכנו כאן את מלאי סאפ.</span>${can?'<button class="btn sm" type="button" data-sap="update">עדכון עכשיו</button>':''}</div>`:'')
+     +`<p class="hint" style="margin:.2rem 0 1rem">עדכון סאפ אחרון: ${fmtDT(last.at)}${last.byName?' · '+esc(last.byName):''} · הצריכה הורדה בסאפ עד: ${meta.cutoffDate?esc(meta.cutoffDate.split('-').reverse().join('/')):'לא סומן (נספרת כל הצריכה)'}</p>`;
+  $('#sapMain').innerHTML=rows.length?`<div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th scope="col">סם</th><th scope="col">מק״ט</th><th scope="col">בסאפ</th><th scope="col">אצלנו</th><th scope="col">צריכה שעוד לא ירדה בסאפ</th><th scope="col">אצלנו + צריכה</th><th scope="col">פער</th><th scope="col">מצב</th></tr></thead><tbody>${rows.map(r=>`<tr class="${r.diff<0?'expired':''}"><th scope="row" style="background:none;color:inherit">${esc(r.name)}</th><td class="code">${esc(r.sku)}</td><td class="num">${r.sap}</td><td class="num">${r.ours}</td><td class="num">${r.pend}</td><td class="num">${r.ours+r.pend}</td><td class="num">${r.diff>0?'+':''}${r.diff}</td><td>${r.diff<0?'<span class="pill expired">✕ חוסר</span>':'<span class="pill ok">✓ תקין</span>'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">אין עדיין נתונים להשוואה.</p>';
+  // pending consumption by day (since the cutoff)
+  const c=meta.cutoff||0, by=new Map(), names=new Set();
+  Object.values(S.ledger).filter(l=>(l.at||0)>c&&(SAP_PENDING[l.type]||l.type==='cancel')).forEach(l=>{ const d=new Date(l.at), k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const o=by.get(k)||{}; o[l.name]=(o[l.name]||0)+(l.type==='cancel'?-(+l.inQty||0):(+l.outQty||0)); by.set(k,o); names.add(l.name); });
+  const days=[...by.keys()].sort(), cols=[...names].sort((a,b)=>a.localeCompare(b,'he'));
+  $('#sapDays').innerHTML=days.length?`<div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th scope="col">תאריך</th>${cols.map(n=>`<th scope="col">${esc(n)}</th>`).join('')}</tr></thead><tbody>${days.map(d=>`<tr><td>${d.split('-').reverse().join('/')}</td>${cols.map(n=>`<td class="num">${by.get(d)[n]||''}</td>`).join('')}</tr>`).join('')}<tr><th scope="row">סה״כ</th>${cols.map(n=>`<td class="num"><strong>${days.reduce((t,d)=>t+(by.get(d)[n]||0),0)}</strong></td>`).join('')}</tr></tbody></table></div>`:'<p class="empty">אין צריכה שממתינה להורדה בסאפ.</p>';
+  // batch comparison (information only)
+  if(last){ const ours=ourBatches(), seen=new Set(), out=[];
+    (last.lines||[]).forEach(x=>{ const k=x.name+'|'+(x.batch||''); seen.add(k); const o=ours.get(k);
+      const flag=!o?'לא נמצאה אצלנו':(x.exp&&o.exp&&x.exp.slice(0,7)!==o.exp.slice(0,7))?'תוקף שונה':'';
+      out.push({name:x.name,batch:x.batch||'',sapQ:+x.qty||0,sapE:x.exp,ourQ:o?o.qty:0,ourE:o?o.exp:'',flag}); });
+    ours.forEach((o,k)=>{ if(!seen.has(k)&&rows.some(r=>r.name===o.name)) out.push({name:o.name,batch:o.batch,sapQ:0,sapE:'',ourQ:o.qty,ourE:o.exp,flag:'לא מופיעה בסאפ'}); });
+    out.sort((a,b)=>a.name.localeCompare(b.name,'he')||a.batch.localeCompare(b.batch));
+    $('#sapBatches').innerHTML=`<div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th scope="col">סם</th><th scope="col">אצווה</th><th scope="col">בסאפ</th><th scope="col">תוקף בסאפ</th><th scope="col">אצלנו</th><th scope="col">תוקף אצלנו</th><th scope="col">הערה</th></tr></thead><tbody>${out.map(r=>`<tr class="${r.flag?'soon':''}"><td>${esc(r.name)}</td><td class="code">${esc(r.batch||'ללא')}</td><td class="num">${r.sapQ}</td><td>${expShort(r.sapE)}</td><td class="num">${r.ourQ}</td><td>${expShort(r.ourE)}</td><td>${esc(r.flag)}</td></tr>`).join('')}</tbody></table></div>`;
+  } else $('#sapBatches').innerHTML='<p class="empty">אין עדיין נתוני סאפ.</p>';
+  const hs=sapSnaps().slice(-12).reverse();
+  $('#sapHist').innerHTML=hs.length?`<ul class="list">${hs.map(s=>`<li><div class="what"><strong>${fmtDT(s.at)}${s.byName?' · '+esc(s.byName):''}</strong><small>${esc(Object.entries((s.lines||[]).reduce((m,x)=>{ m[x.name]=(m[x.name]||0)+(+x.qty||0); return m; },{})).map(([n,q])=>n+' '+q).join(', '))}${s.note?' · '+esc(s.note):''}</small></div></li>`).join('')}</ul>`:'<p class="empty">אין עדכונים.</p>';
+}
+
+/* ---------- update SAP stock (drug, batch, expiry, quantity) ---------- */
+function sapUpdate(prefill){
+  const last=sapLast(); let lines=(last?last.lines:[]).map(x=>Object.assign({},x));
+  if(!lines.length) lines=DRUGS.slice(0,5).map(d=>({name:d[0],batch:'',exp:'',qty:''}));
+  (prefill||[]).forEach(p=>{ const ex=lines.find(x=>x.name===p.name&&(x.batch||'')===(p.batch||'')); if(ex) ex.qty=(+ex.qty||0)+p.qty; else lines.push({name:p.name,batch:p.batch||'',exp:p.exp||'',qty:p.qty}); });
+  const names=[...new Set(DRUGS.map(d=>d[0]).concat(lines.map(x=>x.name)))];
+  const rowHtml=(x,k)=>`<div class="sap-line" data-k="${k}"><select data-f="name" aria-label="סם">${names.map(n=>`<option ${n===x.name?'selected':''}>${esc(n)}</option>`).join('')}</select>
+    <input data-f="batch" value="${esc(x.batch||'')}" list="batchList" placeholder="אצווה" aria-label="אצווה" autocomplete="off" dir="ltr">
+    <div class="exp-pick" id="sapE${k}" role="group" aria-label="תוקף"></div>
+    <input data-f="qty" type="number" min="0" step="1" inputmode="numeric" value="${x.qty===''?'':esc(x.qty)}" placeholder="כמות" aria-label="כמות">
+    <button type="button" class="btn sm" data-sapdel="${k}" aria-label="מחיקת השורה">✕</button></div>`;
+  openGen('עדכון מלאי סאפ',`<p class="sub" style="margin:0">מקלידים את מה שמופיע עכשיו בסאפ: לכל סם, כל אצווה עם התוקף והכמות. ${prefill&&prefill.length?'<strong>הוספתי את מה שהתקבל במשלוח לשורות המתאימות. בדקו מול סאפ ותקנו אם צריך.</strong>':'השורות ממולאות מהעדכון הקודם.'}</p>
+    <div class="sap-line hd" aria-hidden="true"><span>סם</span><span>אצווה</span><span>תוקף</span><span>כמות</span><span></span></div>
+    <div id="sapLines" style="display:grid;gap:.5rem">${lines.map(rowHtml).join('')}</div>
+    <button type="button" class="btn sm" id="sapAdd">+ שורה</button>
+    <div class="field"><label for="sapNote">הערה (לא חובה)</label><input id="sapNote" autocomplete="off" placeholder="למשל: אחרי משלוח מס׳ 1234"></div>`,'שמירת מלאי סאפ',async err=>{
+    const out=[];
+    for(const r of document.querySelectorAll('#sapLines .sap-line')){ const k=r.dataset.k; const name=r.querySelector('[data-f=name]').value, batch=r.querySelector('[data-f=batch]').value.trim(), qv=r.querySelector('[data-f=qty]').value;
+      if(qv==='') continue; const q=+qv; if(!Number.isInteger(q)||q<0){ err(`כמות לא תקינה עבור ${name}.`); return false; }
+      out.push({name,sku:skuOf(name),batch,exp:readExp('sapE'+k)||'',qty:q}); }
+    if(!out.length){ err('יש להזין לפחות שורה אחת עם כמות.'); return false; }
+    if(await put('sap',{id:uid('s'),at:Date.now(),byName:myName||'',lines:out,note:$('#sapNote').value.trim()})){ toast('מלאי סאפ עודכן'); if(route!=='sap') location.hash='sap'; else renderSap(); return true; }
+    return false; });
+  lines.forEach((x,k)=>expPicker($('#sapE'+k),x.exp||'','sapE'+k));
+  let nk=lines.length;
+  $('#sapAdd').addEventListener('click',()=>{ $('#sapLines').insertAdjacentHTML('beforeend',rowHtml({name:DRUGS[0][0],batch:'',exp:'',qty:''},nk)); expPicker($('#sapE'+nk),'','sapE'+nk); nk++; });
+  $('#sapLines').addEventListener('click',e=>{ const b=e.target.closest('[data-sapdel]'); if(b) b.closest('.sap-line').remove(); });
+  $('#sapLines').addEventListener('change',e=>{ const inp=e.target.closest('[data-f=batch]'); if(!inp) return; const kb=findBatch(inp.value), row=inp.closest('.sap-line'); if(kb){ row.querySelector('[data-f=name]').value=kb.name; setExp('sapE'+row.dataset.k,kb.exp); } });
+}
+
+/* ---------- consumption was deducted in SAP up to a date ---------- */
+function sapCutoff(){
+  const n=new Date(), endPrev=new Date(n.getFullYear(),n.getMonth(),0), def=`${endPrev.getFullYear()}-${String(endPrev.getMonth()+1).padStart(2,'0')}-${String(endPrev.getDate()).padStart(2,'0')}`;
+  openGen('הצריכה הורדה בסאפ',`<p class="sub" style="margin:0">אחרי שפתק הצריכה החודשי אושר והצריכה הורדה בסאפ, מסמנים עד איזה תאריך היא הורדה. מאותו רגע התוכנה מחשבת "צריכה שעוד לא ירדה בסאפ" רק מהיום שאחרי.</p>
+    <div class="field"><label for="sapCD">הצריכה הורדה עד (כולל)</label><input id="sapCD" type="date" value="${def}"></div>
+    <div class="field"><label for="sapCN">הערה (לא חובה)</label><input id="sapCN" autocomplete="off" placeholder="למשל: פתק צריכה אוקטובר"></div>
+    <p class="hint" style="margin:0">אחרי השמירה כדאי לעדכן גם את מלאי סאפ, כי הוא ירד.</p>`,'שמירה',async err=>{
+    const v=$('#sapCD').value; if(!v){ err('יש לבחור תאריך.'); return false; }
+    const [y,m,d]=v.split('-').map(Number), cut=new Date(y,m-1,d,23,59,59,999).getTime();
+    if(cut>Date.now()+864e5){ err('אי אפשר לבחור תאריך עתידי.'); return false; }
+    const cur=sapMeta(); const hist=(cur.history||[]).concat({cutoffDate:v,at:Date.now(),byName:myName||'',note:$('#sapCN').value.trim()}).slice(-60);
+    if(await put('sapmeta',{id:'main',cutoff:cut,cutoffDate:v,updatedAt:Date.now(),history:hist})){ toast('נשמר. עכשיו כדאי לעדכן את מלאי סאפ.'); renderSap(); setTimeout(()=>sapUpdate(),300); return true; }
+    return false; });
+}
+
+/* ---------- after every receipt: offer to update SAP ---------- */
+function sapAfterReceive(e){
+  if(mode!=='db'||!sapCan()||!e||!e.name) return;
+  sapRecQueue.push({name:e.name,batch:e.batch||'',exp:e.exp||'',qty:+e.inQty||0}); sapRecSchedule();
+}
+function sapRecSchedule(){
+  clearTimeout(sapRecTimer);
+  sapRecTimer=setTimeout(async()=>{
+    if(!sapRecQueue.length) return;
+    if([...document.querySelectorAll('dialog')].some(d=>d.open)) return sapRecSchedule(); // wait until the receipt dialogs are closed
+    const items=sapRecQueue.splice(0);
+    const r=await confirmDlg('התקבל משלוח',`נקלטו במלאי: ${items.map(x=>x.name+' '+x.qty).join(', ')}. אחרי שהמשלוח נקלט גם בסאפ, כדאי לעדכן כאן את מלאי סאפ. לעדכן עכשיו?`,'עדכון מלאי סאפ');
+    if(r) sapUpdate(items); },800);
+}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-sap]'); if(!b) return;
+  if(!sapCan()) return toast('יש לך הרשאת צפייה בלבד במסך הזה.');
+  if(b.dataset.sap==='update') sapUpdate(); else if(b.dataset.sap==='cutoff') sapCutoff();
 });
 
 /* ---------- actions ---------- */

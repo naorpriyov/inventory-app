@@ -261,7 +261,7 @@ def flags_of(u):
 
 
 # מסכי התוכנה. לכל עובד נקבעת לכל מסך רמת גישה: none (ללא), view (צפייה), full (מלאה)
-TABS = ("dashboard", "inventory", "drugkits", "sign", "ledger", "count", "locations")
+TABS = ("dashboard", "inventory", "drugkits", "sign", "ledger", "sap", "count", "locations")
 
 
 def tabs_of(u):
@@ -286,20 +286,23 @@ def access_sig(u):
     return json.dumps([u["role"], tabs_of(u)], sort_keys=True)
 
 
-APPEND_ONLY = {"ledger", "counts", "cancels"}
+APPEND_ONLY = {"ledger", "counts", "cancels", "sap"}  # sap = עדכוני מלאי סאפ (נשמרים כרצף, לא נמחקים)
 
 # אוספים שהתוכנה משתמשת בהם. עובד לא יכול ליצור אוספים אחרים
 COLLECTIONS = {"items", "kits", "locations", "catalog", "batches", "perms", "ledger", "counts",
                "cancels", "caregivers", "meta", "recon", "moves", "notes",
-               "boxes", "boxtpl"}  # boxes = קופסאות פקלי סמים ממוספרות, boxtpl = תבנית התכולה לכל סדרה
+               "boxes", "boxtpl",  # boxes = קופסאות פקלי סמים ממוספרות, boxtpl = תבנית התכולה לכל סדרה
+               "sap", "sapmeta"}  # sap = מלאי סאפ שהוזן ידנית, sapmeta = עד איזה תאריך הצריכה כבר ירדה בסאפ
 
 # נתונים רגישים נשלחים רק למי שיש לו גישה (צפייה או מלאה) לאחד מהמסכים שצריכים אותם
 READ_TABS = {
-    "ledger": ("ledger",),            # ספר הסמים
+    "ledger": ("ledger", "sap"),     # ספר הסמים (ההשוואה לסאפ צריכה את הצריכה)
     "cancels": ("ledger",),           # זיכויי פתקים
     "caregivers": ("sign",),          # שמות ומספרי זהות של מטפלים
     "counts": ("count", "dashboard"),  # ספירות מלאי
     "recon": ("dashboard",),
+    "sap": ("sap", "dashboard"),
+    "sapmeta": ("sap", "dashboard"),
 }
 
 
@@ -321,7 +324,10 @@ def can_read(u, path):
 
 
 def can_write(u, path, data, op):
-    """op: set | delete. Server-side rules; the owner may do everything."""
+    """op: set | delete. Server-side rules; the owner may do everything except change history."""
+    # ספר הסמים, ספירות, זיכויים ועדכוני סאפ: רישום חדש בלבד. אף אחד, גם לא המנהל, לא משנה או מוחק אותם
+    if path.split("/")[0] in APPEND_ONLY and (op == "delete" or get_doc(path) is not None):
+        return False
     if is_owner(u):
         return True
     seg = path.split("/")
@@ -348,6 +354,8 @@ def can_write(u, path, data, op):
     if top == "recon" and not has_full(u, "dashboard"):
         return False
     if top in ("boxes", "boxtpl") and not has_full(u, "drugkits"):
+        return False
+    if top in ("sap", "sapmeta") and not has_full(u, "sap"):
         return False
     if not has_full(u):
         return False  # צפייה בלבד בכל המסכים
@@ -738,7 +746,8 @@ REPORT_DIR = os.path.join(DATA, "reports")
 
 def report_docs(con=None):
     return {"items": _live_docs("items", con), "ledger": _live_docs("ledger", con), "boxes": _live_docs("boxes", con),
-            "kits": _live_docs("kits", con), "notes": _live_docs("notes/%/n", con)}
+            "kits": _live_docs("kits", con), "notes": _live_docs("notes/%/n", con),
+            "sap": _live_docs("sap", con), "sapmeta": _live_docs("sapmeta", con)}
 
 
 def can_see_reports(u):
@@ -903,6 +912,7 @@ def daily_alerts_job(force=False):
                 low.append(name)
         long_out = sum(1 for b in boxes if b.get("status") == "signed" and b.get("since") and (time.time() * 1000 - b["since"]) > 14 * 864e5)
         empty = sum(1 for b in boxes if b.get("status") == "empty")
+        sap = reports.sap_state(report_docs(con))
         box_exp = sum(1 for b in boxes if b.get("status") != "empty" and any((_month_diff(c.get("exp"), now) is not None and _month_diff(c.get("exp"), now) <= 0) for c in (b.get("contents") or [])))
 
         def lines_for(u, c):
@@ -912,6 +922,9 @@ def daily_alerts_job(force=False):
                 if expired: out.append("פריט אחד פג תוקף" if expired == 1 else f"{expired} פריטים פגי תוקף")
                 if soon: out.append("פריט אחד פג החודש" if soon == 1 else f"{soon} פריטים פגים החודש")
                 if low: out.append("מלאי נמוך: " + ", ".join(sorted(set(low))))
+            if sap and (t["sap"] != "none" or t["dashboard"] != "none"):
+                if sap["short"]: out.append("חוסר מול סאפ: " + ", ".join(f"{r['name']} {r['diff']}" for r in sap["short"]))
+                if sap["receipts_since"]: out.append("התקבל משלוח ומלאי סאפ לא עודכן")
             if t["drugkits"] != "none":
                 if box_exp: out.append("פקל אחד עם סם שפג או פג החודש" if box_exp == 1 else f"{box_exp} פקלים עם סם שפג או פג החודש")
                 if long_out: out.append("פקל אחד חתום יותר משבועיים" if long_out == 1 else f"{long_out} פקלים חתומים יותר משבועיים")
