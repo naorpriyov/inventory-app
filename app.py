@@ -428,7 +428,7 @@ def _security_headers(resp):
 # ---------------------------------------------------------------- pages
 def asset_version():
     """חותמת גרסה לפי זמן השינוי של קבצי העיצוב והקוד, כדי שהדפדפן תמיד יטען את הגרסה החדשה."""
-    m = 0
+    m = max(os.path.getmtime(os.path.join(STATIC, f)) for f in ("shim.js", "sw.js") if os.path.exists(os.path.join(STATIC, f)))
     for d in ("css", "js", "vendor", "fonts"):
         folder = os.path.join(STATIC, d)
         if os.path.isdir(folder):

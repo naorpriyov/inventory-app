@@ -8,12 +8,12 @@
     let r;
     try {
       r = await fetch(url, { method, credentials: 'same-origin', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
-    } catch (e) { const er = new Error('אין חיבור לשרת'); er.code = 'unavailable'; setOnline(false); throw er; }
+    } catch (e) { const er = new Error('אין חיבור לשרת'); er.code = 'unavailable'; netFails++; if (netFails >= 2 || method !== 'GET') setOnline(false); throw er; }
     if (r.status === 401) { location.href = '/login'; const er = new Error('נדרשת התחברות'); er.code = 'unauthenticated'; throw er; }
     let j = {};
     try { j = await r.json(); } catch (e) {}
     if (!r.ok) { const er = new Error(j.error || 'שגיאה'); er.code = j.code || (r.status === 403 ? 'invalid_argument' : 'unavailable'); throw er; }
-    setOnline(true);
+    netFails = 0; setOnline(true);
     return j;
   }
   window.INV_API = req;
@@ -65,9 +65,12 @@
       listeners.forEach(l => { if (first || l.first || touched.has(l.path)) emit(l); });
     } catch (e) { /* ננסה שוב */ }
     polling = false;
-    setTimeout(poll, document.hidden ? 15000 : 3000);
+    // after a failed attempt retry quickly; a single drop (e.g. the phone waking up) shows no message
+    setTimeout(poll, netFails ? 2000 : (document.hidden ? 15000 : 3000));
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
+  window.addEventListener('online', () => poll());
+  window.addEventListener('offline', () => setOnline(false));
 
   function docRef(path) {
     return {
@@ -126,10 +129,13 @@
   };
 
   /* ---------------- connection banner ---------------- */
-  let banner = null;
+  let banner = null, netFails = 0;
   function setOnline(on) {
     if (!banner) return;
     banner.hidden = on;
+    if (!on) banner.textContent = navigator.onLine === false
+      ? 'אין חיבור לאינטרנט בטלפון. שינויים לא יישמרו עד שהחיבור יחזור.'
+      : 'אין חיבור לשרת. מנסה להתחבר שוב… שינויים לא יישמרו עד שהחיבור יחזור.';
   }
 
   /* ---------------- header: user menu + accounts admin ---------------- */
