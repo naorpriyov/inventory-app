@@ -148,6 +148,28 @@ def run(base):
     check("אחרי סימון שהצריכה ירדה בסאפ: אין צריכה ממתינה, ומתגלה חוסר ‎−2", (row["pending"], row["diff"]) == (0, -2))
     check("הדוח החודשי כולל את ההשוואה לסאפ", "השוואה לסאפ" in owner.call("GET", "/report?month=%04d-%02d" % (time.localtime().tm_year, time.localtime().tm_mon))[1].get("html", ""))
 
+    section("הרשאת זיכוי פתקי החתמה")
+    oid = owner.call("GET", "/api/me")[1]["id"]
+    owner.put("notes/" + oid, {"updated": 1})
+    owner.put("notes/" + oid + "/n/x1", {"ts": 111, "date": "2026-11-01", "name": "מטופל", "items": []})
+    cx = {"id": "cx1", "noteTs": 111, "at": 1, "reason": "בדיקה", "lines": []}
+    check("בלי ההרשאה: לא רואה פתקים של אחרים", not any(p_.startswith("notes/" + oid) for p_ in emp.docs()))
+    check("בלי ההרשאה: לא יכול לזכות פתק", emp.put("cancels/cx1", cx) == 403)
+    check("בלי ההרשאה: canCancel=false", emp.call("GET", "/api/me")[1].get("canCancel") is False)
+    sig1 = emp.call("GET", "/api/changes?since=0")[1]["access"]
+    perm["flags"] = dict(perm.get("flags") or {}, cancel=True)
+    owner.put("perms/" + key, perm)
+    j = emp.call("GET", "/api/changes?since=0")[1]
+    check("מתן ההרשאה מרענן את המסך אצל העובד", j["access"] != sig1)
+    check("עם ההרשאה: רואה את כל הפתקים", any(d["path"] == "notes/" + oid + "/n/x1" for d in j["docs"]))
+    check("עם ההרשאה: canCancel=true", emp.call("GET", "/api/me")[1].get("canCancel") is True)
+    check("עם ההרשאה: יכול לזכות פתק", emp.put("cancels/cx1", cx) == 200)
+    check("זיכוי שנרשם לא ניתן לשינוי", emp.put("cancels/cx1", dict(cx, reason="אחר")) == 403)
+    check("עם ההרשאה עדיין לא יכול לכתוב פתק בשם אחר", emp.put("notes/" + oid + "/n/x2", {"ts": 2}) == 403)
+    perm["flags"]["cancel"] = False
+    owner.put("perms/" + key, perm)
+    check("ביטול ההרשאה חוסם שוב", emp.put("cancels/cx2", dict(cx, id="cx2")) == 403)
+
     section("דוח חודשי והתראות")
     st, _, hd = owner.call("GET", "/report?month=2026-11")
     check("המנהל פותח דוח חודשי", st == 200)

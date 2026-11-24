@@ -156,7 +156,7 @@ function shellLocations(){
 }
 
 function shellNotes(){
-  $('#main').innerHTML=`<div class="page-head"><div><h1>פתקי החתמה</h1><p class="sub">כל הפתקים שנחתמו, לפי חודשים. גלוי למנהל בלבד.</p></div></div><div id="sgReport"></div>`;
+  $('#main').innerHTML=`<div class="page-head"><div><h1>פתקי החתמה</h1><p class="sub">כל הפתקים שנחתמו, לפי חודשים. גלוי למנהל ולמי שקיבל הרשאת זיכוי פתקים.</p></div></div><div id="sgReport"></div>`;
   if(window.SG) window.SG.mountReport($('#sgReport'));
 }
 /* ---------- signing on usage ---------- */
@@ -392,7 +392,7 @@ function renderData(){
 
 /* ---------- download permissions ---------- */
 const permKey=id=>'u_'+String(id).replace(/[^A-Za-z0-9_-]/g,'_');
-const PERM_FLAGS=[['receive','קבלת מלאי'],['lower','הורדה'],['edit','עריכה, מחיקה והוספה של פריטים וערכות'],['count','ספירת מלאי']];
+const PERM_FLAGS=[['receive','קבלת מלאי'],['lower','הורדה'],['edit','עריכה, מחיקה והוספה של פריטים וערכות'],['count','ספירת מלאי'],['cancel','זיכוי פתקי החתמה (רואה את כל הפתקים)']];
 function canDo(f){ if(mode!=='db') return true; if(me.isOwner) return true; const p=me.id&&S.perms[permKey(me.id)]; if(!(p&&p.status==='approved'&&p.uid===me.id)) return false; return !!(p.flags||{lower:true})[f]; }
 
 /* ---------- screen access per user: none / view / full ---------- */
@@ -402,7 +402,7 @@ const accessReady=()=>mode==='db'&&!!me.id;
 function tabLevel(t){
   if(mode==='local'||me.isOwner) return 'full';
   if(!accessReady()) return 'view'; // עד שהנתונים נטענים: בלי פעולות ובלי הפניות
-  if(t==='notes') return 'none';
+  if(t==='notes') return canDo('cancel')?'full':'none'; // פתקי החתמה: למי שקיבל הרשאת זיכוי
   const p=S.perms[permKey(me.id)]; if(!(p&&p.status==='approved'&&p.uid===me.id)) return 'none';
   const v=(p.tabs||{})[t]; return v==='view'||v==='full'?v:'none';
 }

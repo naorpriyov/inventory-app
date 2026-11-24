@@ -281,9 +281,14 @@ def has_full(u, *tabs):
     return any(t[x] == "full" for x in (tabs or TABS))
 
 
+def can_cancel(u):
+    """מי רשאי לזכות פתקי החתמה: המנהל, ומי שהמנהל נתן לו את ההרשאה "זיכוי פתקי החתמה"."""
+    return is_owner(u) or bool(flags_of(u).get("cancel"))
+
+
 def access_sig(u):
     """משתנה כשהרשאות המשתמש משתנות, כדי שהדפדפן יטען מחדש את הנתונים."""
-    return json.dumps([u["role"], tabs_of(u)], sort_keys=True)
+    return json.dumps([u["role"], tabs_of(u), can_cancel(u)], sort_keys=True)
 
 
 APPEND_ONLY = {"ledger", "counts", "cancels", "sap"}  # sap = עדכוני מלאי סאפ (נשמרים כרצף, לא נמחקים)
@@ -314,6 +319,9 @@ def can_read(u, path):
         return len(seg) >= 2 and seg[1] == perm_key(u["id"])  # רק בקשת ההרשאות של עצמו
     if not has_any_access(u):
         return False  # עובד בלי גישה לאף מסך לא מקבל נתונים
+    # מי שרשאי לזכות פתקים רואה את כל הפתקים, ואת ספר הסמים והזיכויים שצריך כדי לזכות
+    if seg[0] in ("notes", "ledger", "cancels") and can_cancel(u):
+        return True
     if seg[0] == "notes" and len(seg) >= 2 and seg[1] != u["id"]:
         return False
     need = READ_TABS.get(seg[0])
@@ -360,7 +368,7 @@ def can_write(u, path, data, op):
     if not has_full(u):
         return False  # צפייה בלבד בכל המסכים
     if top == "cancels":
-        return False  # זיכוי פתק – מנהל בלבד
+        return can_cancel(u)  # זיכוי פתק: רק מי שקיבל את ההרשאה  # זיכוי פתק – מנהל בלבד
     if top in APPEND_ONLY:
         return op != "delete" and get_doc(path) is None  # רישום חדש בלבד, בלי שינוי או מחיקה
     if top in ("items", "kits", "locations", "boxes") and op == "delete":
@@ -554,7 +562,7 @@ def api_register():
 @api_login_required
 def api_me():
     u = g.user
-    return jsonify(id=u["id"], name=u["name"], username=u["username"], isOwner=is_owner(u))
+    return jsonify(id=u["id"], name=u["name"], username=u["username"], isOwner=is_owner(u), canCancel=can_cancel(u))
 
 
 @app.post("/api/me/password")

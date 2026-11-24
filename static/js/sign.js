@@ -72,7 +72,7 @@ async function boot(){
   try{ user=await window.claude?.use?.("user"); }catch(e){}
   try{ db=await window.claude?.use?.("db"); }catch(e){}
   try{ dl=await window.claude?.use?.("downloads"); }catch(e){}
-  if(user){ try{ uid=await user.id(); }catch(e){} try{ manager=await user.isOwner(); }catch(e){} }
+  if(user){ try{ uid=await user.id(); }catch(e){} try{ manager=await user.isOwner(); }catch(e){} try{ if(!manager&&user.canCancel) manager=await user.canCancel(); }catch(e){} }
   if(!db||!uid){ db=null; local=true; manager=!user||manager; lsGet(LS_NOTES,[]).forEach(n=>all.set(n._k,n)); repMsg=""; }
   booted=true;
   const nav=g("navNotes"); if(nav) nav.hidden=!manager;
@@ -251,7 +251,7 @@ function renderReport(){
   if(!reportEl||!document.body.contains(reportEl)) return;
   const R=reportEl; R.innerHTML="";
   if(!booted){ R.appendChild(el("p",{class:"sg-status",text:"טוען…"})); return; }
-  if(!manager){ R.appendChild(el("div",{class:"sg-empty",text:"פירוט הפתקים זמין רק למנהל המלאי."})); return; }
+  if(!manager){ R.appendChild(el("div",{class:"sg-empty",text:"פירוט הפתקים זמין רק למנהל המלאי ולמי שקיבל הרשאת זיכוי פתקים."})); return; }
   const allN=notesArr();
   const ys=[...new Set(allN.map(n=>parseInt(n.date.slice(0,4))).concat([new Date().getFullYear()]))].sort((a,b)=>b-a);
   const ySel=el("select",{id:"sgYear"}); ys.forEach(y=>{ const o=el("option",{value:String(y),text:String(y)}); if(y===selYear) o.selected=true; ySel.appendChild(o); });

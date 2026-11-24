@@ -105,6 +105,7 @@
     me: async () => { const m = await me(); return { id: m.id, name: m.name, isOwner: m.isOwner }; },
     id: async () => (await me()).id,
     isOwner: async () => (await me()).isOwner,
+    canCancel: async () => !!(await me()).canCancel,
     name: async () => (await me()).name,
     search: async () => [], profiles: async () => ({})
   };
